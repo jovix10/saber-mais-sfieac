@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoFieac from "@/assets/logo-fieac.png";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
