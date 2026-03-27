@@ -13,7 +13,15 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        heading: ['Plus Jakarta Sans', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+      },
       colors: {
+        "unit-sesi": "hsl(var(--unit-sesi))",
+        "unit-senai": "hsl(var(--unit-senai))",
+        "unit-fieac": "hsl(var(--unit-fieac))",
+        "unit-iel": "hsl(var(--unit-iel))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
