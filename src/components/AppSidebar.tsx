@@ -8,6 +8,8 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import logoFieac from "@/assets/logo-fieac.png";
+import casasBranca from "@/assets/casas-branca.png";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -23,25 +25,19 @@ const adminItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="bg-sidebar">
         <div className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-sidebar-primary flex items-center justify-center font-heading font-bold text-sidebar-primary-foreground text-lg shrink-0">
-            S+
-          </div>
+          <img src={logoFieac} alt="Saber+" className="h-9 w-auto shrink-0" />
           {!collapsed && (
-            <div>
-              <p className="font-heading font-bold text-sidebar-foreground text-sm">Saber+</p>
-              <p className="text-xs text-sidebar-foreground/60">FIEAC</p>
-            </div>
+            <p className="font-heading font-bold text-sidebar-foreground text-base tracking-tight">Saber+</p>
           )}
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -50,7 +46,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
@@ -64,7 +60,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Administração</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">Administração</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {adminItems.map((item) => (
@@ -72,7 +68,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
@@ -84,6 +80,13 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Casas FIEAC */}
+        {!collapsed && (
+          <div className="mt-auto px-4 pb-2">
+            <img src={casasBranca} alt="FIEAC · SESI · SENAI · IEL" className="w-full opacity-60" />
+          </div>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="bg-sidebar p-4">
