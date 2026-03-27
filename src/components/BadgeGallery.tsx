@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Compass, Flame, Award, Crown, Lock } from "lucide-react";
-import type { Badge } from "@/lib/mock-data";
+import { mockBadges, type Badge } from "@/lib/mock-data";
 
 const badgeIcons: Record<string, React.ElementType> = {
   compass: Compass,
@@ -14,12 +14,11 @@ interface BadgeGalleryProps {
 }
 
 export function BadgeGallery({ badges }: BadgeGalleryProps) {
-  const { mockBadges } = require("@/lib/mock-data");
   const items = badges || mockBadges;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {items.map((badge: Badge, i: number) => {
+      {items.map((badge, i) => {
         const Icon = badgeIcons[badge.icon] || Award;
         return (
           <motion.div key={badge.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}
