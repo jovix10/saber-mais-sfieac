@@ -1,9 +1,18 @@
 import { AppLayout } from "@/components/AppLayout";
 import { BadgeGallery } from "@/components/BadgeGallery";
-import { mockUser, unitGoals, mockBadges } from "@/lib/mock-data";
+import { useAuth } from "@/hooks/useAuth";
+import { mockBadges } from "@/lib/mock-data";
 
 export default function Badges() {
-  const unlockedCount = mockBadges.filter(b => b.unlocked).length;
+  const { profile } = useAuth();
+  const hours = Number(profile?.total_hours) || 0;
+
+  const badges = mockBadges.map(b => ({
+    ...b,
+    unlocked: hours >= b.requiredHours,
+  }));
+
+  const unlockedCount = badges.filter(b => b.unlocked).length;
 
   return (
     <AppLayout>
@@ -11,10 +20,10 @@ export default function Badges() {
         <div>
           <h2 className="font-heading font-bold text-2xl text-foreground">Conquistas</h2>
           <p className="text-muted-foreground text-sm">
-            {unlockedCount} de {mockBadges.length} badges desbloqueados
+            {unlockedCount} de {badges.length} badges desbloqueados
           </p>
         </div>
-        <BadgeGallery />
+        <BadgeGallery badges={badges} />
       </div>
     </AppLayout>
   );

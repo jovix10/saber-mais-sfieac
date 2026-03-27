@@ -1,11 +1,28 @@
 import { AppLayout } from "@/components/AppLayout";
 import { LeaderboardPodium } from "@/components/LeaderboardPodium";
-import { mockLeaderboard, type Unit } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const units: (Unit | 'all')[] = ['all', 'SESI', 'SENAI', 'FIEAC', 'IEL'];
+import type { UserProfile, Unit } from "@/lib/mock-data";
 
 export default function Leaderboard() {
+  const [users, setUsers] = useState<UserProfile[]>([]);
+
+  useEffect(() => {
+    supabase.from("profiles").select("*").then(({ data }) => {
+      if (data) {
+        setUsers(data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          email: p.email,
+          unit: p.unit as Unit,
+          area: p.area,
+          totalHours: Number(p.total_hours),
+        })));
+      }
+    });
+  }, []);
+
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto space-y-6">
@@ -13,7 +30,6 @@ export default function Leaderboard() {
           <h2 className="font-heading font-bold text-2xl text-foreground">Ranking</h2>
           <p className="text-muted-foreground text-sm">Veja quem lidera a corrida do conhecimento</p>
         </div>
-
         <Tabs defaultValue="all">
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="all">Geral</TabsTrigger>
@@ -22,13 +38,12 @@ export default function Leaderboard() {
             <TabsTrigger value="FIEAC">FIEAC</TabsTrigger>
             <TabsTrigger value="IEL">IEL</TabsTrigger>
           </TabsList>
-
           <TabsContent value="all">
-            <LeaderboardPodium users={mockLeaderboard} title="Top Geral FIEAC" />
+            <LeaderboardPodium users={users} title="Top Geral FIEAC" />
           </TabsContent>
           {(['SESI', 'SENAI', 'FIEAC', 'IEL'] as Unit[]).map(unit => (
             <TabsContent key={unit} value={unit}>
-              <LeaderboardPodium users={mockLeaderboard} title={`Top ${unit}`} filterUnit={unit} />
+              <LeaderboardPodium users={users} title={`Top ${unit}`} filterUnit={unit} />
             </TabsContent>
           ))}
         </Tabs>
