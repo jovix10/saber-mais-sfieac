@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, Leaf, Users, Clock, ExternalLink } from "lucide-react";
+import { BookOpen, Leaf, Users, Clock, ExternalLink, Puzzle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const competenceIcons: Record<string, React.ElementType> = {
   Digital: BookOpen,
   Ambiental: Leaf,
   Inclusiva: Users,
+  Outros: Puzzle,
 };
 
 const competenceColors: Record<string, string> = {
   Digital: 'bg-blue-500/10 text-blue-600',
   Ambiental: 'bg-emerald-500/10 text-emerald-600',
   Inclusiva: 'bg-violet-500/10 text-violet-600',
+  Outros: 'bg-orange-500/10 text-orange-600',
 };
 
 interface Course {
@@ -33,12 +35,21 @@ export function CourseCarousel() {
     });
   }, []);
 
+  if (courses.length === 0) {
+    return (
+      <div>
+        <h3 className="font-heading font-bold text-lg text-foreground mb-4">🔥 Cursos em Alta</h3>
+        <p className="text-sm text-muted-foreground">Nenhum curso disponível no momento</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="font-heading font-bold text-lg text-foreground mb-4">🔥 Cursos em Alta</h3>
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory scrollbar-hide">
         {courses.map((course, i) => {
-          const Icon = competenceIcons[course.competence] || BookOpen;
+          const Icon = competenceIcons[course.competence] || Puzzle;
           return (
             <motion.a
               key={course.id}
@@ -54,7 +65,7 @@ export function CourseCarousel() {
                 <Icon className="h-10 w-10 text-primary/50" />
                 <ExternalLink className="h-4 w-4 text-primary/30 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mb-2 ${competenceColors[course.competence] || ''}`}>
+              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mb-2 ${competenceColors[course.competence] || competenceColors.Outros}`}>
                 <Icon className="h-3 w-3" />
                 {course.competence}
               </div>

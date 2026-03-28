@@ -1,8 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import logoFieac from "@/assets/logo-fieac.png";
+import { NotificationPanel } from "@/components/NotificationPanel";
+import { AchievementPopup } from "@/components/AchievementPopup";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,16 +15,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <h1 className="font-heading font-bold text-lg text-foreground hidden sm:block">Saber+</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-destructive rounded-full" />
-              </Button>
+              <NotificationPanel />
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             {children}
           </main>
         </div>
+        <AchievementPopup />
       </div>
     </SidebarProvider>
   );

@@ -18,6 +18,7 @@ export default function Leaderboard() {
           unit: p.unit as Unit,
           area: p.area,
           totalHours: Number(p.total_hours),
+          avatarUrl: p.avatar_url || undefined,
         })));
       }
     });
@@ -27,7 +28,7 @@ export default function Leaderboard() {
     <AppLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h2 className="font-heading font-bold text-2xl text-foreground">Ranking</h2>
+          <h2 className="font-heading font-bold text-2xl text-foreground">🏆 Ranking</h2>
           <p className="text-muted-foreground text-sm">Veja quem lidera a corrida do conhecimento</p>
         </div>
         <Tabs defaultValue="all">

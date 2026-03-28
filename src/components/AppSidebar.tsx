@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut,
+  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ const mainItems = [
   { title: "Certificados", url: "/certificates", icon: Upload },
   { title: "Ranking", url: "/leaderboard", icon: Trophy },
   { title: "Conquistas", url: "/badges", icon: Award },
+  { title: "Perfil", url: "/profile", icon: User },
 ];
 
 export function AppSidebar() {
@@ -29,6 +30,9 @@ export function AppSidebar() {
     await signOut();
     navigate('/login');
   };
+
+  const hours = Number(profile?.total_hours) || 0;
+  const ringColor = hours >= 40 ? 'border-red-500' : hours >= 20 ? 'border-amber-500' : hours >= 10 ? 'border-violet-500' : hours >= 5 ? 'border-blue-500' : 'border-muted';
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -85,9 +89,20 @@ export function AppSidebar() {
 
       <SidebarFooter className="bg-sidebar p-4">
         {!collapsed && profile && (
-          <div className="px-2 pb-2">
-            <p className="text-xs text-sidebar-foreground/60 truncate">{profile.name}</p>
-            <p className="text-[10px] text-sidebar-foreground/40 truncate">{profile.email}</p>
+          <div className="px-2 pb-2 flex items-center gap-2">
+            <div className={`h-8 w-8 rounded-full border-2 ${ringColor} overflow-hidden shrink-0`}>
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-accent-foreground">
+                  {profile.name.charAt(0)}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-sidebar-foreground/60 truncate">{profile.name}</p>
+              <p className="text-[10px] text-sidebar-foreground/40 truncate">{profile.email}</p>
+            </div>
           </div>
         )}
         <SidebarMenu>
