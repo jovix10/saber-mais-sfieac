@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, CheckCircle, Clock, XCircle, Plus } from "lucide-react";
+import { Upload, CheckCircle, Clock, XCircle, Plus, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ interface Cert {
   competence: string;
   status: string;
   created_at: string;
+  file_url: string | null;
 }
 
 export default function Certificates() {
@@ -33,6 +34,7 @@ export default function Certificates() {
   const [hours, setHours] = useState('');
   const [competence, setCompetence] = useState('Digital');
   const [submitting, setSubmitting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
   const fetchCerts = async () => {
     if (!user) return;
@@ -43,19 +45,35 @@ export default function Certificates() {
   useEffect(() => { fetchCerts(); }, [user]);
 
   const handleSubmit = async () => {
-    if (!user || !title || !hours) return;
+    if (!user || !title || !hours || !file) {
+      toast.error("Preencha todos os campos e anexe o PDF");
+      return;
+    }
     setSubmitting(true);
+
+    // Upload PDF
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from("certificates").upload(filePath, file);
+    
+    if (uploadError) {
+      toast.error("Erro ao enviar arquivo");
+      setSubmitting(false);
+      return;
+    }
+
     const { error } = await supabase.from("certificates").insert({
       user_id: user.id,
       title,
       hours: parseInt(hours),
       competence,
+      file_url: filePath,
     });
     if (error) {
       toast.error("Erro ao enviar certificado");
     } else {
       toast.success("Certificado enviado para validação!");
-      setTitle(''); setHours(''); setCompetence('Digital'); setShowForm(false);
+      setTitle(''); setHours(''); setCompetence('Digital'); setShowForm(false); setFile(null);
       fetchCerts();
     }
     setSubmitting(false);
@@ -67,7 +85,7 @@ export default function Certificates() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-heading font-bold text-2xl text-foreground">Meus Certificados</h2>
-            <p className="text-muted-foreground text-sm">Envie seus certificados para validação</p>
+            <p className="text-muted-foreground text-sm">Envie seus certificados em PDF para validação</p>
           </div>
           <Button onClick={() => setShowForm(!showForm)} className="gap-2">
             <Plus className="h-4 w-4" /> Novo Certificado
@@ -94,8 +112,25 @@ export default function Certificates() {
                     <SelectItem value="Digital">Digital</SelectItem>
                     <SelectItem value="Ambiental">Ambiental</SelectItem>
                     <SelectItem value="Inclusiva">Inclusiva</SelectItem>
+                    <SelectItem value="Outros">Outros</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Certificado (PDF)</Label>
+                <div className="relative">
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    onChange={e => setFile(e.target.files?.[0] || null)}
+                    className="file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:text-xs file:font-medium"
+                  />
+                </div>
+                {file && (
+                  <p className="text-xs text-emerald-600 flex items-center gap-1">
+                    <FileText className="h-3 w-3" /> {file.name}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-2 justify-end">
