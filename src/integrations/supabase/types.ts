@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           area: string
@@ -146,6 +176,27 @@ export type Database = {
           name?: string
           total_hours?: number
           unit?: string
+        }
+        Relationships: []
+      }
+      unit_goals: {
+        Row: {
+          goal_hours: number
+          id: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          goal_hours?: number
+          id?: string
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          goal_hours?: number
+          id?: string
+          unit?: string
+          updated_at?: string
         }
         Relationships: []
       }
