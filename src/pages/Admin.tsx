@@ -48,6 +48,8 @@ export default function Admin() {
   const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [supportForm, setSupportForm] = useState({ email: 'suporte@fieac.org.br', phone: '(68) 3212-4200', message: 'Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.' });
+  const [resetPwUser, setResetPwUser] = useState<Profile | null>(null);
+  const [resetPwValue, setResetPwValue] = useState('');
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
