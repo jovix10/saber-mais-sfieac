@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle } from "lucide-react";
+import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle, KeyRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,8 @@ export default function Admin() {
   const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [supportForm, setSupportForm] = useState({ email: 'suporte@fieac.org.br', phone: '(68) 3212-4200', message: 'Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.' });
+  const [resetPwUser, setResetPwUser] = useState<Profile | null>(null);
+  const [resetPwValue, setResetPwValue] = useState('');
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
@@ -218,6 +220,29 @@ export default function Admin() {
       }
     } catch {
       toast.error("Erro ao acessar conta do usuário");
+    }
+    setSubmitting(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPwUser || !resetPwValue) return;
+    if (resetPwValue.length < 6) { toast.error("Senha deve ter no mínimo 6 caracteres"); return; }
+    setSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('reset-password', {
+        body: { user_id: resetPwUser.id, new_password: resetPwValue },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || "Erro ao redefinir senha");
+      } else {
+        toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso!`);
+        setResetPwUser(null);
+        setResetPwValue('');
+      }
+    } catch {
+      toast.error("Erro ao redefinir senha");
     }
     setSubmitting(false);
   };
@@ -904,10 +929,34 @@ export default function Admin() {
                         <Shield className="h-3.5 w-3.5" /> {isUserAdmin(selectedUser.id) ? 'Remover Admin' : 'Tornar Admin'}
                       </Button>
                     </div>
+                    <Button variant="outline" onClick={() => { setResetPwUser(selectedUser); setResetPwValue(''); }} className="w-full gap-1">
+                      <KeyRound className="h-3.5 w-3.5" /> Redefinir Senha
+                    </Button>
                   </div>
                 </div>
               );
             })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={!!resetPwUser} onOpenChange={() => setResetPwUser(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle></DialogHeader>
+            {resetPwUser && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Nova senha para <strong>{resetPwUser.name}</strong></p>
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={resetPwValue}
+                  onChange={e => setResetPwValue(e.target.value)}
+                />
+                <Button onClick={handleResetPassword} disabled={submitting || resetPwValue.length < 6} className="w-full gap-2">
+                  <KeyRound className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Nova Senha'}
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
