@@ -929,10 +929,34 @@ export default function Admin() {
                         <Shield className="h-3.5 w-3.5" /> {isUserAdmin(selectedUser.id) ? 'Remover Admin' : 'Tornar Admin'}
                       </Button>
                     </div>
+                    <Button variant="outline" onClick={() => { setResetPwUser(selectedUser); setResetPwValue(''); }} className="w-full gap-1">
+                      <KeyRound className="h-3.5 w-3.5" /> Redefinir Senha
+                    </Button>
                   </div>
                 </div>
               );
             })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={!!resetPwUser} onOpenChange={() => setResetPwUser(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle></DialogHeader>
+            {resetPwUser && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Nova senha para <strong>{resetPwUser.name}</strong></p>
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={resetPwValue}
+                  onChange={e => setResetPwValue(e.target.value)}
+                />
+                <Button onClick={handleResetPassword} disabled={submitting || resetPwValue.length < 6} className="w-full gap-2">
+                  <KeyRound className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Nova Senha'}
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
