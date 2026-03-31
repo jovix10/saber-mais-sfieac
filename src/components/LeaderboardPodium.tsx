@@ -1,6 +1,10 @@
 import { type UserProfile, type Unit } from "@/lib/mock-data";
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { UserLevel } from "@/components/UserLevel";
+import { Shield } from "lucide-react";
 
 interface LeaderboardPodiumProps {
   users: UserProfile[];
@@ -13,6 +17,7 @@ export function LeaderboardPodium({ users, title, filterUnit }: LeaderboardPodiu
   const sorted = [...filtered].sort((a, b) => b.totalHours - a.totalHours);
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
+  const [selectedUser, setSelectedUser] = useState<(UserProfile & { rank: number }) | null>(null);
 
   const podiumOrder = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
   const heights = ['h-24', 'h-32', 'h-20'];
