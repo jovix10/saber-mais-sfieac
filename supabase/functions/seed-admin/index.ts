@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   );
 
   const email = "joao.ferreira@fieac.org.br";
-  const password = "João@4514232";
+  const password = "Joao@4514232";
 
   // Check if user exists
   const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
