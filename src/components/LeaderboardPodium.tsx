@@ -39,7 +39,11 @@ export function LeaderboardPodium({ users, title, filterUnit }: LeaderboardPodiu
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.15 }}
-              className="flex flex-col items-center"
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => {
+                const realIdx = sorted.findIndex(u => u.id === user.id);
+                setSelectedUser({ ...user, rank: realIdx + 1 });
+              }}
             >
               <div className={`${sizes[i]} rounded-full overflow-hidden border-2 border-amber-400/50 shadow-lg mb-2`}>
                 {user.avatarUrl ? (
