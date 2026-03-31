@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
 export function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
 
   if (loading) {
     return (
