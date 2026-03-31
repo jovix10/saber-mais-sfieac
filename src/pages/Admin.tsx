@@ -4,21 +4,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Profile {
-  id: string; name: string; email: string; unit: string; area: string; total_hours: number; avatar_url: string | null;
+  id: string; name: string; email: string; unit: string; area: string; total_hours: number; avatar_url: string | null; visible_in_ranking: boolean;
 }
 interface Cert {
   id: string; user_id: string; title: string; hours: number; competence: string; status: string; created_at: string; file_url: string | null;
 }
 interface Course {
-  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean;
+  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null;
 }
 interface UserRole {
   user_id: string; role: string;
@@ -33,9 +33,10 @@ export default function Admin() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '' });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
+  const [courseImageFile, setCourseImageFile] = useState<File | null>(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
-  const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals'>('overview');
+  const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports'>('overview');
   const [submitting, setSubmitting] = useState(false);
 
   const fetchAll = async () => {
@@ -72,11 +73,15 @@ export default function Admin() {
     fetchAll();
   };
 
+  const toggleRanking = async (userId: string, current: boolean) => {
+    await supabase.from("profiles").update({ visible_in_ranking: !current } as any).eq("id", userId);
+    toast.success(!current ? "Usuário visível no ranking" : "Usuário oculto do ranking");
+    fetchAll();
+  };
+
   const handleCertAction = async (certId: string, status: 'approved' | 'rejected') => {
     const { error } = await supabase.from("certificates").update({ status }).eq("id", certId);
     if (error) { toast.error("Erro ao atualizar certificado"); return; }
-    
-    // Create notification for the user
     const cert = certs.find(c => c.id === certId);
     if (cert) {
       await supabase.from("notifications").insert({
@@ -85,8 +90,6 @@ export default function Admin() {
         message: `Seu certificado "${cert.title}" foi ${status === 'approved' ? 'aprovado' : 'reprovado'}.`,
         type: status === 'approved' ? 'success' : 'error',
       });
-
-      // Create achievement if approved
       if (status === 'approved') {
         const user = profiles.find(p => p.id === cert.user_id);
         if (user) {
@@ -99,13 +102,24 @@ export default function Admin() {
         }
       }
     }
-
     toast.success(status === 'approved' ? 'Certificado aprovado!' : 'Certificado reprovado');
     fetchAll();
   };
 
   const handleAddCourse = async () => {
     if (!courseForm.title) return;
+    setSubmitting(true);
+    let imageUrl = courseForm.image_url;
+
+    if (courseImageFile) {
+      const filePath = `courses/${Date.now()}.${courseImageFile.name.split('.').pop()}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(filePath, courseImageFile, { upsert: true });
+      if (!upErr) {
+        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+        imageUrl = publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("courses").insert({
       title: courseForm.title,
       description: courseForm.description,
@@ -113,12 +127,16 @@ export default function Admin() {
       hours: parseInt(courseForm.hours) || 1,
       provider: courseForm.provider,
       external_url: courseForm.external_url,
+      image_url: imageUrl,
     });
-    if (error) { toast.error("Erro ao criar curso"); return; }
-    toast.success("Curso criado!");
-    setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '' });
-    setShowCourseDialog(false);
-    fetchAll();
+    if (error) { toast.error("Erro ao criar curso"); } else {
+      toast.success("Curso criado!");
+      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
+      setCourseImageFile(null);
+      setShowCourseDialog(false);
+      fetchAll();
+    }
+    setSubmitting(false);
   };
 
   const toggleCourse = async (id: string, active: boolean) => {
@@ -134,9 +152,7 @@ export default function Admin() {
       password: userForm.password,
       options: { data: { name: userForm.name, unit: userForm.unit, area: userForm.area } },
     });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    if (error) { toast.error(error.message); } else {
       toast.success("Usuário cadastrado com sucesso!");
       setUserForm({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
       setShowUserDialog(false);
@@ -152,26 +168,21 @@ export default function Admin() {
     const text = await file.text();
     const lines = text.split('\n').filter(l => l.trim());
     const header = lines[0].toLowerCase();
-    
     if (!header.includes('nome') || !header.includes('email') || !header.includes('senha')) {
       toast.error("Formato inválido. Use: nome;email;senha;unidade;area");
       setSubmitting(false);
       return;
     }
-
-    let success = 0;
-    let errors = 0;
+    let success = 0, errors = 0;
     for (let i = 1; i < lines.length; i++) {
       const parts = lines[i].split(';').map(s => s.trim());
       if (parts.length < 3) continue;
       const [name, email, password, unit, area] = parts;
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email, password,
         options: { data: { name, unit: unit || 'FIEAC', area: area || '' } },
       });
-      if (error) errors++;
-      else success++;
+      if (error) errors++; else success++;
     }
     toast.success(`${success} usuários cadastrados. ${errors > 0 ? `${errors} erros.` : ''}`);
     setShowBulkDialog(false);
@@ -183,19 +194,18 @@ export default function Admin() {
     const csv = "nome;email;senha;unidade;area\nJoão Silva;joao@fieac.org.br;Senha@123;SESI;TI\nMaria Santos;maria@fieac.org.br;Senha@456;SENAI;RH";
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'template_usuarios.csv';
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'template_usuarios.csv'; a.click();
   };
 
   const handleGoalUpdate = async (unit: string, hours: number) => {
-    const { error } = await supabase.from("unit_goals").update({ goal_hours: hours }).eq("unit", unit);
-    if (error) toast.error("Erro ao atualizar meta");
-    else {
-      toast.success(`Meta do ${unit} atualizada para ${hours}h`);
-      setGoals(prev => ({ ...prev, [unit]: hours }));
+    const { data: existing } = await supabase.from("unit_goals").select("id").eq("unit", unit);
+    if (existing && existing.length > 0) {
+      await supabase.from("unit_goals").update({ goal_hours: hours }).eq("unit", unit);
+    } else {
+      await supabase.from("unit_goals").insert({ unit, goal_hours: hours });
     }
+    toast.success(`Meta do ${unit} atualizada para ${hours}h`);
+    setGoals(prev => ({ ...prev, [unit]: hours }));
   };
 
   const viewCertFile = async (fileUrl: string | null) => {
@@ -204,6 +214,23 @@ export default function Admin() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
     else toast.error("Erro ao abrir arquivo");
   };
+
+  const exportUsers = () => {
+    const header = "Nome;Email;Unidade;Área;Horas;Admin;Visível no Ranking";
+    const rows = profiles.map(p =>
+      `${p.name};${p.email};${p.unit};${p.area};${Number(p.total_hours)};${isUserAdmin(p.id) ? 'Sim' : 'Não'};${p.visible_in_ranking ? 'Sim' : 'Não'}`
+    );
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `usuarios_saber_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  };
+
+  // Course analytics: count how many approved certs match each course title
+  const coursePopularity = courses.map(c => ({
+    ...c,
+    completions: certs.filter(cert => cert.title === c.title && cert.status === 'approved').length,
+  })).sort((a, b) => b.completions - a.completions);
 
   const pendingCerts = certs.filter(c => c.status === 'pending');
   const avgHours = profiles.length ? Math.round(profiles.reduce((a, b) => a + Number(b.total_hours), 0) / profiles.length) : 0;
@@ -220,12 +247,13 @@ export default function Admin() {
     { key: 'certs' as const, label: 'Certificados' },
     { key: 'courses' as const, label: 'Cursos' },
     { key: 'goals' as const, label: 'Metas' },
+    { key: 'reports' as const, label: 'Relatórios' },
   ];
 
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="font-heading font-bold text-2xl text-foreground">Painel Administrativo</h2>
             <p className="text-muted-foreground text-sm">Gerencie colaboradores, certificados, cursos e metas</p>
@@ -332,8 +360,8 @@ export default function Admin() {
                     <th className="text-left py-2 font-medium text-muted-foreground">Nome</th>
                     <th className="text-left py-2 font-medium text-muted-foreground">E-mail</th>
                     <th className="text-left py-2 font-medium text-muted-foreground">Unidade</th>
-                    <th className="text-left py-2 font-medium text-muted-foreground">Área</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Horas</th>
+                    <th className="text-center py-2 font-medium text-muted-foreground">Ranking</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Admin</th>
                   </tr>
                 </thead>
@@ -345,8 +373,10 @@ export default function Admin() {
                       <td className="py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${user.unit.toLowerCase()}`}>{user.unit}</span>
                       </td>
-                      <td className="py-3 text-muted-foreground">{user.area}</td>
                       <td className="py-3 text-right font-heading font-semibold text-foreground">{Number(user.total_hours)}h</td>
+                      <td className="py-3 text-center">
+                        <Switch checked={user.visible_in_ranking} onCheckedChange={() => toggleRanking(user.id, user.visible_in_ranking)} />
+                      </td>
                       <td className="py-3 text-right">
                         <Button size="sm" variant={isUserAdmin(user.id) ? "default" : "outline"} onClick={() => toggleAdmin(user.id)} className="gap-1">
                           <Shield className="h-3.5 w-3.5" />
@@ -454,7 +484,15 @@ export default function Admin() {
                       <Label className="flex items-center gap-1"><LinkIcon className="h-3.5 w-3.5" /> Link do Curso (oculto para o usuário)</Label>
                       <Input value={courseForm.external_url} onChange={e => setCourseForm({ ...courseForm, external_url: e.target.value })} placeholder="https://..." />
                     </div>
-                    <Button onClick={handleAddCourse} className="w-full">Criar Curso</Button>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1"><Image className="h-3.5 w-3.5" /> Imagem do Curso</Label>
+                      <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)}
+                        className="file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:text-xs file:font-medium" />
+                      {courseImageFile && <p className="text-xs text-emerald-600">{courseImageFile.name}</p>}
+                    </div>
+                    <Button onClick={handleAddCourse} disabled={submitting} className="w-full">
+                      {submitting ? 'Criando...' : 'Criar Curso'}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -462,12 +500,21 @@ export default function Admin() {
             <div className="space-y-3">
               {courses.length === 0 && <p className="text-muted-foreground text-sm">Nenhum curso cadastrado</p>}
               {courses.map(course => (
-                <div key={course.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{course.title}</p>
-                    <p className="text-xs text-muted-foreground">{course.provider} · {course.hours}h · {course.competence}</p>
+                <div key={course.id} className="flex items-center gap-3 justify-between p-3 rounded-xl bg-muted/50">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {course.image_url ? (
+                      <img src={course.image_url} alt={course.title} className="h-12 w-12 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <BookOpen className="h-5 w-5 text-primary/50" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{course.title}</p>
+                      <p className="text-xs text-muted-foreground">{course.provider} · {course.hours}h · {course.competence}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs px-2 py-1 rounded-full ${course.active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
                       {course.active ? 'Ativo' : 'Inativo'}
                     </span>
@@ -488,10 +535,10 @@ export default function Admin() {
               <Target className="h-5 w-5" /> Metas por Unidade
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Defina as metas de horas de capacitação para SENAI e SESI. As horas são contabilizadas apenas após a validação do certificado.
+              Defina as metas de horas de capacitação. As horas são contabilizadas apenas após a validação do certificado.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['SENAI', 'SESI'].map(unit => (
+              {['SENAI', 'SESI', 'FIEAC', 'IEL'].map(unit => (
                 <div key={unit} className="p-4 rounded-xl bg-muted/50 space-y-3">
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${unit.toLowerCase()}`}>{unit}</span>
@@ -516,6 +563,64 @@ export default function Admin() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reports */}
+        {tab === 'reports' && (
+          <div className="space-y-6">
+            <div className="glass-card rounded-2xl p-6">
+              <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" /> Relatórios
+              </h3>
+              <div className="flex flex-wrap gap-3 mb-6">
+                <Button onClick={exportUsers} className="gap-2">
+                  <Download className="h-4 w-4" /> Exportar Base de Usuários (CSV)
+                </Button>
+              </div>
+
+              {/* Unit summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {['SESI', 'SENAI', 'FIEAC', 'IEL'].map(unit => {
+                  const unitUsers = profiles.filter(p => p.unit === unit);
+                  const goalHours = goals[unit] ?? 20;
+                  const metGoal = unitUsers.filter(u => Number(u.total_hours) >= goalHours).length;
+                  return (
+                    <div key={unit} className="rounded-xl bg-muted/50 p-4">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${unit.toLowerCase()}`}>{unit}</span>
+                      <p className="font-heading font-bold text-xl text-foreground mt-2">{metGoal}/{unitUsers.length}</p>
+                      <p className="text-xs text-muted-foreground">atingiram a meta</p>
+                      <div className="h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${unitUsers.length ? (metGoal / unitUsers.length) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Course popularity */}
+              <h4 className="font-heading font-semibold text-foreground mb-3">📊 Cursos Mais Realizados</h4>
+              <div className="space-y-2">
+                {coursePopularity.length === 0 && <p className="text-sm text-muted-foreground">Nenhum curso cadastrado</p>}
+                {coursePopularity.slice(0, 10).map((c, i) => (
+                  <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                    <span className="text-sm font-bold text-muted-foreground w-6">{i + 1}°</span>
+                    {c.image_url ? (
+                      <img src={c.image_url} alt={c.title} className="h-8 w-8 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <BookOpen className="h-4 w-4 text-primary/50" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{c.title}</p>
+                      <p className="text-xs text-muted-foreground">{c.competence} · {c.hours}h</p>
+                    </div>
+                    <span className="text-sm font-heading font-bold text-foreground">{c.completions} conclusões</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
