@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HelpCircle, Mail, Phone, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const SUPPORT_INFO = {
+const DEFAULT_SUPPORT = {
   email: "suporte@fieac.org.br",
   phone: "(68) 3212-4200",
   message: "Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.",
@@ -10,6 +10,20 @@ const SUPPORT_INFO = {
 
 export function SupportButton() {
   const [open, setOpen] = useState(false);
+  const [info, setInfo] = useState(DEFAULT_SUPPORT);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('saber_support_config');
+    if (saved) {
+      try { setInfo(JSON.parse(saved)); } catch {}
+    }
+    const handler = () => {
+      const s = localStorage.getItem('saber_support_config');
+      if (s) try { setInfo(JSON.parse(s)); } catch {}
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -31,14 +45,14 @@ export function SupportButton() {
             <p className="text-sm font-heading font-bold text-foreground flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-emerald-600" /> Suporte
             </p>
-            <p className="text-xs text-muted-foreground">{SUPPORT_INFO.message}</p>
-            <a href={`mailto:${SUPPORT_INFO.email}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors p-2 rounded-lg bg-muted/50">
+            <p className="text-xs text-muted-foreground">{info.message}</p>
+            <a href={`mailto:${info.email}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors p-2 rounded-lg bg-muted/50">
               <Mail className="h-4 w-4 text-primary" />
-              {SUPPORT_INFO.email}
+              {info.email}
             </a>
-            <a href={`tel:${SUPPORT_INFO.phone.replace(/\D/g, '')}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors p-2 rounded-lg bg-muted/50">
+            <a href={`tel:${info.phone.replace(/\D/g, '')}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors p-2 rounded-lg bg-muted/50">
               <Phone className="h-4 w-4 text-primary" />
-              {SUPPORT_INFO.phone}
+              {info.phone}
             </a>
           </motion.div>
         )}

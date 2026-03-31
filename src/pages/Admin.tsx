@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,11 +34,18 @@ export default function Admin() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [showEditCourseDialog, setShowEditCourseDialog] = useState(false);
+  const [showEditHoursDialog, setShowEditHoursDialog] = useState(false);
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [editHoursUser, setEditHoursUser] = useState<Profile | null>(null);
+  const [editHoursValue, setEditHoursValue] = useState('');
   const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
   const [courseImageFile, setCourseImageFile] = useState<File | null>(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
-  const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports'>('overview');
+  const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
   const [submitting, setSubmitting] = useState(false);
+  const [supportForm, setSupportForm] = useState({ email: 'suporte@fieac.org.br', phone: '(68) 3212-4200', message: 'Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.' });
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
@@ -56,6 +64,9 @@ export default function Admin() {
       (g as any[]).forEach(item => { goalsMap[item.unit] = item.goal_hours; });
       setGoals(goalsMap);
     }
+    // Load support config from localStorage
+    const saved = localStorage.getItem('saber_support_config');
+    if (saved) setSupportForm(JSON.parse(saved));
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -106,28 +117,27 @@ export default function Admin() {
     fetchAll();
   };
 
+  const uploadCourseImage = async (file: File) => {
+    const filePath = `courses/${Date.now()}.${file.name.split('.').pop()}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
+    if (!upErr) {
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      return publicUrl;
+    }
+    return null;
+  };
+
   const handleAddCourse = async () => {
     if (!courseForm.title) return;
     setSubmitting(true);
     let imageUrl = courseForm.image_url;
-
     if (courseImageFile) {
-      const filePath = `courses/${Date.now()}.${courseImageFile.name.split('.').pop()}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(filePath, courseImageFile, { upsert: true });
-      if (!upErr) {
-        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
-        imageUrl = publicUrl;
-      }
+      const url = await uploadCourseImage(courseImageFile);
+      if (url) imageUrl = url;
     }
-
     const { error } = await supabase.from("courses").insert({
-      title: courseForm.title,
-      description: courseForm.description,
-      competence: courseForm.competence,
-      hours: parseInt(courseForm.hours) || 1,
-      provider: courseForm.provider,
-      external_url: courseForm.external_url,
-      image_url: imageUrl,
+      title: courseForm.title, description: courseForm.description, competence: courseForm.competence,
+      hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl,
     });
     if (error) { toast.error("Erro ao criar curso"); } else {
       toast.success("Curso criado!");
@@ -139,6 +149,61 @@ export default function Admin() {
     setSubmitting(false);
   };
 
+  const handleEditCourse = async () => {
+    if (!editingCourse) return;
+    setSubmitting(true);
+    let imageUrl = editingCourse.image_url;
+    if (courseImageFile) {
+      const url = await uploadCourseImage(courseImageFile);
+      if (url) imageUrl = url;
+    }
+    const { error } = await supabase.from("courses").update({
+      title: editingCourse.title, description: editingCourse.description, competence: editingCourse.competence,
+      hours: editingCourse.hours, provider: editingCourse.provider, external_url: editingCourse.external_url, image_url: imageUrl,
+    }).eq("id", editingCourse.id);
+    if (error) { toast.error("Erro ao atualizar curso"); } else {
+      toast.success("Curso atualizado!");
+      setShowEditCourseDialog(false);
+      setEditingCourse(null);
+      setCourseImageFile(null);
+      fetchAll();
+    }
+    setSubmitting(false);
+  };
+
+  const openEditCourse = (course: Course) => {
+    setEditingCourse({ ...course });
+    setCourseImageFile(null);
+    setShowEditCourseDialog(true);
+  };
+
+  const handleEditHours = async () => {
+    if (!editHoursUser) return;
+    const newHours = parseFloat(editHoursValue);
+    if (isNaN(newHours) || newHours < 0) { toast.error("Valor inválido"); return; }
+    setSubmitting(true);
+    const { error } = await supabase.from("profiles").update({ total_hours: newHours } as any).eq("id", editHoursUser.id);
+    if (error) { toast.error("Erro ao atualizar horas"); } else {
+      toast.success(`Horas de ${editHoursUser.name} atualizadas para ${newHours}h`);
+      setShowEditHoursDialog(false);
+      fetchAll();
+    }
+    setSubmitting(false);
+  };
+
+  const handleImpersonate = async (userId: string) => {
+    // Open user profile in a new conceptual view - we show their data in a dialog
+    const user = profiles.find(p => p.id === userId);
+    if (!user) return;
+    const userCerts = certs.filter(c => c.user_id === userId);
+    const approved = userCerts.filter(c => c.status === 'approved').length;
+    const pending = userCerts.filter(c => c.status === 'pending').length;
+    toast.info(
+      `👤 ${user.name}\n📧 ${user.email}\n🏢 ${user.unit} - ${user.area}\n⏱️ ${Number(user.total_hours)}h\n📜 ${approved} aprovados, ${pending} pendentes`,
+      { duration: 8000 }
+    );
+  };
+
   const toggleCourse = async (id: string, active: boolean) => {
     await supabase.from("courses").update({ active: !active }).eq("id", id);
     fetchAll();
@@ -148,8 +213,7 @@ export default function Admin() {
     if (!userForm.name || !userForm.email || !userForm.password) return;
     setSubmitting(true);
     const { error } = await supabase.auth.signUp({
-      email: userForm.email,
-      password: userForm.password,
+      email: userForm.email, password: userForm.password,
       options: { data: { name: userForm.name, unit: userForm.unit, area: userForm.area } },
     });
     if (error) { toast.error(error.message); } else {
@@ -170,23 +234,18 @@ export default function Admin() {
     const header = lines[0].toLowerCase();
     if (!header.includes('nome') || !header.includes('email') || !header.includes('senha')) {
       toast.error("Formato inválido. Use: nome;email;senha;unidade;area");
-      setSubmitting(false);
-      return;
+      setSubmitting(false); return;
     }
     let success = 0, errors = 0;
     for (let i = 1; i < lines.length; i++) {
       const parts = lines[i].split(';').map(s => s.trim());
       if (parts.length < 3) continue;
       const [name, email, password, unit, area] = parts;
-      const { error } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { name, unit: unit || 'FIEAC', area: area || '' } },
-      });
+      const { error } = await supabase.auth.signUp({ email, password, options: { data: { name, unit: unit || 'FIEAC', area: area || '' } } });
       if (error) errors++; else success++;
     }
     toast.success(`${success} usuários cadastrados. ${errors > 0 ? `${errors} erros.` : ''}`);
-    setShowBulkDialog(false);
-    setSubmitting(false);
+    setShowBulkDialog(false); setSubmitting(false);
     setTimeout(fetchAll, 2000);
   };
 
@@ -226,7 +285,12 @@ export default function Admin() {
     const a = document.createElement('a'); a.href = url; a.download = `usuarios_saber_${new Date().toISOString().slice(0,10)}.csv`; a.click();
   };
 
-  // Course analytics: count how many approved certs match each course title
+  const handleSaveSupportConfig = () => {
+    localStorage.setItem('saber_support_config', JSON.stringify(supportForm));
+    toast.success("Configurações de suporte salvas!");
+    setShowSupportDialog(false);
+  };
+
   const coursePopularity = courses.map(c => ({
     ...c,
     completions: certs.filter(cert => cert.title === c.title && cert.status === 'approved').length,
@@ -248,6 +312,7 @@ export default function Admin() {
     { key: 'courses' as const, label: 'Cursos' },
     { key: 'goals' as const, label: 'Metas' },
     { key: 'reports' as const, label: 'Relatórios' },
+    { key: 'support' as const, label: 'Suporte' },
   ];
 
   return (
@@ -358,30 +423,66 @@ export default function Admin() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 font-medium text-muted-foreground">Nome</th>
-                    <th className="text-left py-2 font-medium text-muted-foreground">E-mail</th>
+                    <th className="text-left py-2 font-medium text-muted-foreground hidden md:table-cell">E-mail</th>
                     <th className="text-left py-2 font-medium text-muted-foreground">Unidade</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Horas</th>
                     <th className="text-center py-2 font-medium text-muted-foreground">Ranking</th>
-                    <th className="text-right py-2 font-medium text-muted-foreground">Admin</th>
+                    <th className="text-right py-2 font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {profiles.map(user => (
-                    <tr key={user.id} className="border-b last:border-0">
-                      <td className="py-3 font-medium text-foreground">{user.name}</td>
-                      <td className="py-3 text-muted-foreground">{user.email}</td>
+                    <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <span className="text-xs font-bold text-primary">{user.name.charAt(0)}</span>
+                            </div>
+                          )}
+                          <span className="font-medium text-foreground">{user.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 text-muted-foreground hidden md:table-cell">{user.email}</td>
                       <td className="py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${user.unit.toLowerCase()}`}>{user.unit}</span>
                       </td>
-                      <td className="py-3 text-right font-heading font-semibold text-foreground">{Number(user.total_hours)}h</td>
+                      <td className="py-3 text-right">
+                        <button
+                          onClick={() => { setEditHoursUser(user); setEditHoursValue(String(Number(user.total_hours))); setShowEditHoursDialog(true); }}
+                          className="font-heading font-semibold text-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
+                          title="Editar horas"
+                        >
+                          {Number(user.total_hours)}h
+                          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+                        </button>
+                      </td>
                       <td className="py-3 text-center">
-                        <Switch checked={user.visible_in_ranking} onCheckedChange={() => toggleRanking(user.id, user.visible_in_ranking)} />
+                        <button
+                          onClick={() => toggleRanking(user.id, user.visible_in_ranking)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${user.visible_in_ranking ? 'bg-primary' : 'bg-muted'}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${user.visible_in_ranking ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
                       </td>
                       <td className="py-3 text-right">
-                        <Button size="sm" variant={isUserAdmin(user.id) ? "default" : "outline"} onClick={() => toggleAdmin(user.id)} className="gap-1">
-                          <Shield className="h-3.5 w-3.5" />
-                          {isUserAdmin(user.id) ? 'Admin' : 'Tornar Admin'}
-                        </Button>
+                        <div className="flex items-center gap-1 justify-end">
+                          <Button size="sm" variant="ghost" onClick={() => handleImpersonate(user.id)} title="Ver dados do usuário" className="h-8 w-8 p-0">
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={isUserAdmin(user.id) ? "default" : "outline"}
+                            onClick={() => toggleAdmin(user.id)}
+                            className="gap-1 h-8"
+                            title={isUserAdmin(user.id) ? 'Remover admin' : 'Tornar admin'}
+                          >
+                            <Shield className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">{isUserAdmin(user.id) ? 'Admin' : 'Admin'}</span>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -390,6 +491,23 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* Edit Hours Dialog */}
+        <Dialog open={showEditHoursDialog} onOpenChange={setShowEditHoursDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Editar Horas - {editHoursUser?.name}</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Ajuste o total de horas do colaborador. Atual: {editHoursUser ? Number(editHoursUser.total_hours) : 0}h</p>
+              <div className="space-y-2">
+                <Label>Novo total de horas</Label>
+                <Input type="number" value={editHoursValue} onChange={e => setEditHoursValue(e.target.value)} min={0} step={0.5} />
+              </div>
+              <Button onClick={handleEditHours} disabled={submitting} className="w-full gap-2">
+                <Save className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Horas'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Certificates Management */}
         {tab === 'certs' && (
@@ -449,7 +567,7 @@ export default function Admin() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>Adicionar Curso</DialogTitle></DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                     <div className="space-y-2">
                       <Label>Título</Label>
                       <Input value={courseForm.title} onChange={e => setCourseForm({ ...courseForm, title: e.target.value })} placeholder="Nome do curso" />
@@ -486,9 +604,7 @@ export default function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1"><Image className="h-3.5 w-3.5" /> Imagem do Curso</Label>
-                      <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)}
-                        className="file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:text-xs file:font-medium" />
-                      {courseImageFile && <p className="text-xs text-emerald-600">{courseImageFile.name}</p>}
+                      <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)} />
                     </div>
                     <Button onClick={handleAddCourse} disabled={submitting} className="w-full">
                       {submitting ? 'Criando...' : 'Criar Curso'}
@@ -518,6 +634,9 @@ export default function Admin() {
                     <span className={`text-xs px-2 py-1 rounded-full ${course.active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
                       {course.active ? 'Ativo' : 'Inativo'}
                     </span>
+                    <Button size="sm" variant="ghost" onClick={() => openEditCourse(course)} title="Editar curso">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => toggleCourse(course.id, course.active)}>
                       {course.active ? 'Desativar' : 'Ativar'}
                     </Button>
@@ -527,6 +646,61 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* Edit Course Dialog */}
+        <Dialog open={showEditCourseDialog} onOpenChange={setShowEditCourseDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Editar Curso</DialogTitle></DialogHeader>
+            {editingCourse && (
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="space-y-2">
+                  <Label>Título</Label>
+                  <Input value={editingCourse.title} onChange={e => setEditingCourse({ ...editingCourse, title: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Descrição</Label>
+                  <Input value={editingCourse.description || ''} onChange={e => setEditingCourse({ ...editingCourse, description: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Competência</Label>
+                    <Select value={editingCourse.competence} onValueChange={v => setEditingCourse({ ...editingCourse, competence: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Digital">Digital</SelectItem>
+                        <SelectItem value="Ambiental">Ambiental</SelectItem>
+                        <SelectItem value="Inclusiva">Inclusiva</SelectItem>
+                        <SelectItem value="Outros">Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Horas</Label>
+                    <Input type="number" value={editingCourse.hours} onChange={e => setEditingCourse({ ...editingCourse, hours: parseInt(e.target.value) || 1 })} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Provedor</Label>
+                  <Input value={editingCourse.provider || ''} onChange={e => setEditingCourse({ ...editingCourse, provider: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><LinkIcon className="h-3.5 w-3.5" /> Link do Curso</Label>
+                  <Input value={editingCourse.external_url} onChange={e => setEditingCourse({ ...editingCourse, external_url: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Image className="h-3.5 w-3.5" /> Nova Imagem (opcional)</Label>
+                  <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)} />
+                  {editingCourse.image_url && !courseImageFile && (
+                    <img src={editingCourse.image_url} alt="" className="h-16 w-16 rounded-lg object-cover mt-1" />
+                  )}
+                </div>
+                <Button onClick={handleEditCourse} disabled={submitting} className="w-full gap-2">
+                  <Save className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Goals Management */}
         {tab === 'goals' && (
@@ -580,7 +754,6 @@ export default function Admin() {
                 </Button>
               </div>
 
-              {/* Unit summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 {['SESI', 'SENAI', 'FIEAC', 'IEL'].map(unit => {
                   const unitUsers = profiles.filter(p => p.unit === unit);
@@ -599,7 +772,6 @@ export default function Admin() {
                 })}
               </div>
 
-              {/* Course popularity */}
               <h4 className="font-heading font-semibold text-foreground mb-3">📊 Cursos Mais Realizados</h4>
               <div className="space-y-2">
                 {coursePopularity.length === 0 && <p className="text-sm text-muted-foreground">Nenhum curso cadastrado</p>}
@@ -621,6 +793,35 @@ export default function Admin() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Support Config */}
+        {tab === 'support' && (
+          <div className="glass-card rounded-2xl p-6">
+            <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+              <HelpCircle className="h-5 w-5" /> Configurações de Suporte
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Configure as informações exibidas no botão de suporte para todos os usuários.
+            </p>
+            <div className="space-y-4 max-w-lg">
+              <div className="space-y-2">
+                <Label>E-mail de Suporte</Label>
+                <Input value={supportForm.email} onChange={e => setSupportForm({ ...supportForm, email: e.target.value })} placeholder="suporte@fieac.org.br" />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone de Suporte</Label>
+                <Input value={supportForm.phone} onChange={e => setSupportForm({ ...supportForm, phone: e.target.value })} placeholder="(68) 3212-4200" />
+              </div>
+              <div className="space-y-2">
+                <Label>Mensagem</Label>
+                <Textarea value={supportForm.message} onChange={e => setSupportForm({ ...supportForm, message: e.target.value })} rows={3} placeholder="Mensagem exibida no suporte" />
+              </div>
+              <Button onClick={handleSaveSupportConfig} className="gap-2">
+                <Save className="h-4 w-4" /> Salvar Configurações
+              </Button>
             </div>
           </div>
         )}
