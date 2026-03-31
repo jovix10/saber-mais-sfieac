@@ -2,6 +2,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationPanel } from "@/components/NotificationPanel";
 import { AchievementPopup } from "@/components/AchievementPopup";
+import { AccessibilityButton } from "@/components/AccessibilityButton";
+import { SupportButton } from "@/components/SupportButton";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,6 +25,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
         <AchievementPopup />
+        <AccessibilityButton />
+        <SupportButton />
       </div>
     </SidebarProvider>
   );

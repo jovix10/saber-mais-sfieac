@@ -24,6 +24,7 @@ interface Course {
   hours: number;
   provider: string;
   external_url: string;
+  image_url: string | null;
 }
 
 export function CourseCarousel() {
@@ -61,8 +62,12 @@ export function CourseCarousel() {
               transition={{ delay: i * 0.1 }}
               className="glass-card rounded-xl p-5 min-w-[260px] max-w-[280px] snap-start cursor-pointer hover:shadow-xl transition-shadow group block"
             >
-              <div className="h-28 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-4 group-hover:from-primary/15 group-hover:to-primary/10 transition-colors relative">
-                <Icon className="h-10 w-10 text-primary/50" />
+              <div className="h-28 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-4 group-hover:from-primary/15 group-hover:to-primary/10 transition-colors relative overflow-hidden">
+                {course.image_url ? (
+                  <img src={course.image_url} alt={course.title} className="h-full w-full object-cover rounded-lg" />
+                ) : (
+                  <Icon className="h-10 w-10 text-primary/50" />
+                )}
                 <ExternalLink className="h-4 w-4 text-primary/30 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mb-2 ${competenceColors[course.competence] || competenceColors.Outros}`}>
