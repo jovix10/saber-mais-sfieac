@@ -109,3 +109,15 @@
 /* Hide scrollbar for course carousel */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* High contrast mode */
+.high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 85%;
+  --primary: 50 100% 50%;
+  --primary-foreground: 0 0% 0%;
+}
