@@ -230,21 +230,30 @@ export default function Admin() {
     setSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Sessão expirada, faça login novamente");
+        setSubmitting(false);
+        return;
+      }
       const res = await supabase.functions.invoke('reset-password', {
         body: { user_id: resetPwUser.id, new_password: resetPwValue },
-        headers: { Authorization: `Bearer ${session?.access_token}` },
       });
-      if (res.error || res.data?.error) {
-        toast.error(res.data?.error || "Erro ao redefinir senha");
+      console.log("Reset password response:", res);
+      if (res.error) {
+        const errorMsg = typeof res.error === 'object' && 'message' in res.error 
+          ? (res.error as any).message 
+          : String(res.error);
+        toast.error(errorMsg || "Erro ao redefinir senha");
+      } else if (res.data?.error) {
+        toast.error(res.data.error);
       } else {
-        toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso!`);
-        // Mark user to change password on next login
-        await supabase.from("profiles").update({ must_change_password: true } as any).eq("id", resetPwUser.id);
+        toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso! O usuário precisará trocar a senha no próximo login.`);
         setResetPwUser(null);
         setResetPwValue('');
       }
-    } catch {
-      toast.error("Erro ao redefinir senha");
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      toast.error(err?.message || "Erro ao redefinir senha");
     }
     setSubmitting(false);
   };
