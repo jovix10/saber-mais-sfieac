@@ -156,6 +156,7 @@ export type Database = {
           name: string
           total_hours: number
           unit: string
+          visible_in_ranking: boolean
         }
         Insert: {
           area?: string
@@ -166,6 +167,7 @@ export type Database = {
           name: string
           total_hours?: number
           unit?: string
+          visible_in_ranking?: boolean
         }
         Update: {
           area?: string
@@ -176,6 +178,7 @@ export type Database = {
           name?: string
           total_hours?: number
           unit?: string
+          visible_in_ranking?: boolean
         }
         Relationships: []
       }
