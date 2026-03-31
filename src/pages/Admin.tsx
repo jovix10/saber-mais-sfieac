@@ -224,6 +224,29 @@ export default function Admin() {
     setSubmitting(false);
   };
 
+  const handleResetPassword = async () => {
+    if (!resetPwUser || !resetPwValue) return;
+    if (resetPwValue.length < 6) { toast.error("Senha deve ter no mínimo 6 caracteres"); return; }
+    setSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('reset-password', {
+        body: { user_id: resetPwUser.id, new_password: resetPwValue },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || "Erro ao redefinir senha");
+      } else {
+        toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso!`);
+        setResetPwUser(null);
+        setResetPwValue('');
+      }
+    } catch {
+      toast.error("Erro ao redefinir senha");
+    }
+    setSubmitting(false);
+  };
+
   const toggleCourse = async (id: string, active: boolean) => {
     await supabase.from("courses").update({ active: !active }).eq("id", id);
     fetchAll();
