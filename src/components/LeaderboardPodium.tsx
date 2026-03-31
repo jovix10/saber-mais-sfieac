@@ -1,6 +1,10 @@
 import { type UserProfile, type Unit } from "@/lib/mock-data";
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { UserLevel } from "@/components/UserLevel";
+import { Shield } from "lucide-react";
 
 interface LeaderboardPodiumProps {
   users: UserProfile[];
@@ -13,6 +17,7 @@ export function LeaderboardPodium({ users, title, filterUnit }: LeaderboardPodiu
   const sorted = [...filtered].sort((a, b) => b.totalHours - a.totalHours);
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
+  const [selectedUser, setSelectedUser] = useState<(UserProfile & { rank: number }) | null>(null);
 
   const podiumOrder = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
   const heights = ['h-24', 'h-32', 'h-20'];
@@ -34,7 +39,11 @@ export function LeaderboardPodium({ users, title, filterUnit }: LeaderboardPodiu
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.15 }}
-              className="flex flex-col items-center"
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => {
+                const realIdx = sorted.findIndex(u => u.id === user.id);
+                setSelectedUser({ ...user, rank: realIdx + 1 });
+              }}
             >
               <div className={`${sizes[i]} rounded-full overflow-hidden border-2 border-amber-400/50 shadow-lg mb-2`}>
                 {user.avatarUrl ? (
@@ -62,7 +71,8 @@ export function LeaderboardPodium({ users, title, filterUnit }: LeaderboardPodiu
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 + i * 0.05 }}
-            className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+            className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+            onClick={() => setSelectedUser({ ...user, rank: i + 4 })}
           >
             <span className="text-sm font-bold text-muted-foreground w-6">{i + 4}°</span>
             <div className="h-8 w-8 rounded-full overflow-hidden shrink-0">
@@ -82,6 +92,46 @@ export function LeaderboardPodium({ users, title, filterUnit }: LeaderboardPodiu
           </motion.div>
         ))}
       </div>
+
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-sm">
+          {selectedUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-center">Perfil do Colaborador</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-primary/30 shadow-lg">
+                  {selectedUser.avatarUrl ? (
+                    <img src={selectedUser.avatarUrl} alt={selectedUser.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className={`h-full w-full unit-badge-${selectedUser.unit.toLowerCase()} flex items-center justify-center font-heading font-bold text-2xl`}>
+                      {selectedUser.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="text-center">
+                  <h3 className="font-heading font-bold text-lg text-foreground">{selectedUser.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedUser.unit} • {selectedUser.area || 'Sem área'}</p>
+                </div>
+                <div className="flex items-center gap-3 w-full justify-center">
+                  <div className="text-center px-4 py-2 rounded-xl bg-muted/50">
+                    <p className="text-lg font-bold text-foreground">{selectedUser.rank}°</p>
+                    <p className="text-[10px] text-muted-foreground">Posição</p>
+                  </div>
+                  <div className="text-center px-4 py-2 rounded-xl bg-muted/50">
+                    <p className="text-lg font-bold text-foreground">{selectedUser.totalHours}h</p>
+                    <p className="text-[10px] text-muted-foreground">Total</p>
+                  </div>
+                </div>
+                <div className="w-full">
+                  <UserLevel hours={selectedUser.totalHours} />
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
