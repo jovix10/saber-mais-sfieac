@@ -238,6 +238,8 @@ export default function Admin() {
         toast.error(res.data?.error || "Erro ao redefinir senha");
       } else {
         toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso!`);
+        // Mark user to change password on next login
+        await supabase.from("profiles").update({ must_change_password: true } as any).eq("id", resetPwUser.id);
         setResetPwUser(null);
         setResetPwValue('');
       }

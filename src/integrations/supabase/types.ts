@@ -153,6 +153,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          must_change_password: boolean
           name: string
           total_hours: number
           unit: string
@@ -164,6 +165,7 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          must_change_password?: boolean
           name: string
           total_hours?: number
           unit?: string
@@ -175,6 +177,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          must_change_password?: boolean
           name?: string
           total_hours?: number
           unit?: string
