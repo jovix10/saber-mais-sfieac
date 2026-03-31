@@ -10,6 +10,7 @@ interface Profile {
   area: string;
   total_hours: number;
   avatar_url: string | null;
+  must_change_password: boolean;
 }
 
 interface AuthContextType {

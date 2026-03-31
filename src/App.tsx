@@ -13,6 +13,7 @@ import Badges from "./pages/Badges";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
