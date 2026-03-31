@@ -37,6 +37,8 @@ export default function Admin() {
   const [showEditCourseDialog, setShowEditCourseDialog] = useState(false);
   const [showEditHoursDialog, setShowEditHoursDialog] = useState(false);
   const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [showUserDetailDialog, setShowUserDetailDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editHoursUser, setEditHoursUser] = useState<Profile | null>(null);
   const [editHoursValue, setEditHoursValue] = useState('');
