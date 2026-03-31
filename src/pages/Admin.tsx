@@ -843,7 +843,75 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* User Detail Dialog */}
+        <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle></DialogHeader>
+            {selectedUser && (() => {
+              const userCerts = certs.filter(c => c.user_id === selectedUser.id);
+              const approved = userCerts.filter(c => c.status === 'approved').length;
+              const pending = userCerts.filter(c => c.status === 'pending').length;
+              const rejected = userCerts.filter(c => c.status === 'rejected').length;
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    {selectedUser.avatar_url ? (
+                      <img src={selectedUser.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="font-heading font-bold text-xl text-primary">{selectedUser.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-heading font-bold text-lg text-foreground">{selectedUser.name}</p>
+                      <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${selectedUser.unit.toLowerCase()}`}>{selectedUser.unit}</span>
+                        {selectedUser.area && <span className="text-xs text-muted-foreground">{selectedUser.area}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <p className="font-heading font-bold text-xl text-foreground">{Number(selectedUser.total_hours)}h</p>
+                      <p className="text-xs text-muted-foreground">Total de Horas</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <p className="font-heading font-bold text-xl text-foreground">{approved}</p>
+                      <p className="text-xs text-muted-foreground">Certificados Aprovados</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <p className="font-heading font-bold text-xl text-amber-600">{pending}</p>
+                      <p className="text-xs text-muted-foreground">Pendentes</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <p className="font-heading font-bold text-xl text-red-600">{rejected}</p>
+                      <p className="text-xs text-muted-foreground">Reprovados</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Button onClick={() => handleLoginAsUser(selectedUser.id)} disabled={submitting} className="w-full gap-2">
+                      <UserCheck className="h-4 w-4" /> {submitting ? 'Acessando...' : 'Entrar na Conta do Usuário'}
+                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" onClick={() => { setEditHoursUser(selectedUser); setEditHoursValue(String(Number(selectedUser.total_hours))); setShowEditHoursDialog(true); }} className="gap-1">
+                        <Pencil className="h-3.5 w-3.5" /> Editar Horas
+                      </Button>
+                      <Button variant={isUserAdmin(selectedUser.id) ? "default" : "outline"} onClick={() => toggleAdmin(selectedUser.id)} className="gap-1">
+                        <Shield className="h-3.5 w-3.5" /> {isUserAdmin(selectedUser.id) ? 'Remover Admin' : 'Tornar Admin'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
 }
+
