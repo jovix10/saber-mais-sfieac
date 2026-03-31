@@ -194,16 +194,32 @@ export default function Admin() {
   };
 
   const handleImpersonate = async (userId: string) => {
-    // Open user profile in a new conceptual view - we show their data in a dialog
     const user = profiles.find(p => p.id === userId);
     if (!user) return;
-    const userCerts = certs.filter(c => c.user_id === userId);
-    const approved = userCerts.filter(c => c.status === 'approved').length;
-    const pending = userCerts.filter(c => c.status === 'pending').length;
-    toast.info(
-      `👤 ${user.name}\n📧 ${user.email}\n🏢 ${user.unit} - ${user.area}\n⏱️ ${Number(user.total_hours)}h\n📜 ${approved} aprovados, ${pending} pendentes`,
-      { duration: 8000 }
-    );
+    setSelectedUser(user);
+    setShowUserDetailDialog(true);
+  };
+
+  const handleLoginAsUser = async (userId: string) => {
+    const user = profiles.find(p => p.id === userId);
+    if (!user) return;
+    setSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('impersonate-user', {
+        body: { user_id: userId },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || "Erro ao acessar conta");
+      } else if (res.data?.url) {
+        toast.success(`Abrindo conta de ${user.name}...`);
+        window.open(res.data.url, '_blank');
+      }
+    } catch {
+      toast.error("Erro ao acessar conta do usuário");
+    }
+    setSubmitting(false);
   };
 
   const toggleCourse = async (id: string, active: boolean) => {
