@@ -2,6 +2,9 @@ import { AppLayout } from "@/components/AppLayout";
 import { ProgressCard } from "@/components/ProgressCard";
 import { CourseCarousel } from "@/components/CourseCarousel";
 import { AchievementFeed } from "@/components/AchievementFeed";
+import { LearningTrailMap } from "@/components/LearningTrailMap";
+import { DailyStreak } from "@/components/DailyStreak";
+import { UserLevel } from "@/components/UserLevel";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +32,6 @@ export default function Dashboard() {
     supabase.from("certificates").select("id", { count: "exact", head: true }).eq("user_id", profile.id).eq("status", "approved").then(({ count }) => {
       setCertCount(count ?? 0);
     });
-    // Get ranking position
     supabase.from("profiles").select("id, total_hours").eq("visible_in_ranking", true).order("total_hours", { ascending: false }).then(({ data }) => {
       if (data) {
         const pos = data.findIndex(p => p.id === profile.id);
@@ -75,6 +77,12 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground">{s.label}</p>
             </motion.div>
           ))}
+        </div>
+
+        {/* Level + Daily streak row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UserLevel hours={hours} />
+          <DailyStreak />
         </div>
 
         {/* Next badge teaser */}
@@ -123,6 +131,9 @@ export default function Dashboard() {
             </div>
           </motion.div>
         )}
+
+        {/* Learning trail map */}
+        <LearningTrailMap />
 
         <CourseCarousel />
         <AchievementFeed />

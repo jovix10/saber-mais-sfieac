@@ -1,11 +1,23 @@
-import { useState } from "react";
-import { Accessibility } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Accessibility, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function AccessibilityButton() {
   const [open, setOpen] = useState(false);
   const [fontSize, setFontSize] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('saber-dark-mode') === 'true';
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('saber-dark-mode', String(darkMode));
+  }, [darkMode]);
 
   const changeFontSize = (delta: number) => {
     const next = Math.max(80, Math.min(140, fontSize + delta));
@@ -21,8 +33,10 @@ export function AccessibilityButton() {
   const reset = () => {
     setFontSize(100);
     setHighContrast(false);
+    setDarkMode(false);
     document.documentElement.style.fontSize = '100%';
     document.documentElement.classList.remove('high-contrast');
+    document.documentElement.classList.remove('dark');
   };
 
   return (
@@ -40,7 +54,7 @@ export function AccessibilityButton() {
             initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
-            className="absolute bottom-14 left-0 bg-card border rounded-xl shadow-xl p-4 space-y-3 min-w-[200px]"
+            className="absolute bottom-14 left-0 bg-card border rounded-xl shadow-xl p-4 space-y-3 min-w-[220px]"
           >
             <p className="text-xs font-heading font-bold text-foreground">Acessibilidade</p>
             <div className="flex items-center justify-between gap-2">
@@ -49,6 +63,16 @@ export function AccessibilityButton() {
                 <button onClick={() => changeFontSize(-10)} className="h-7 w-7 rounded bg-muted text-foreground text-sm font-bold hover:bg-muted/80">A-</button>
                 <button onClick={() => changeFontSize(10)} className="h-7 w-7 rounded bg-muted text-foreground text-sm font-bold hover:bg-muted/80">A+</button>
               </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Modo escuro</span>
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className={`h-7 px-3 rounded text-xs font-medium flex items-center gap-1.5 ${darkMode ? 'bg-foreground text-background' : 'bg-muted text-foreground'}`}
+              >
+                {darkMode ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
+                {darkMode ? 'Ligado' : 'Desligado'}
+              </button>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Alto contraste</span>
