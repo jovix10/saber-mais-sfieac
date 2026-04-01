@@ -426,6 +426,30 @@ export default function Admin() {
                       <Input value={userForm.area} onChange={e => setUserForm({ ...userForm, area: e.target.value })} placeholder="Ex: TI" />
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Tipo de Acesso</Label>
+                      <Select value={userForm.role} onValueChange={v => setUserForm({ ...userForm, role: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Colaborador</SelectItem>
+                          <SelectItem value="gestor">Gestor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Gestor Responsável</Label>
+                      <Select value={userForm.manager_id} onValueChange={v => setUserForm({ ...userForm, manager_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {profiles.filter(p => roles.some(r => r.user_id === p.id && (r.role === 'gestor' || r.role === 'admin'))).map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <Button onClick={handleAddUser} disabled={submitting} className="w-full">
                     {submitting ? 'Cadastrando...' : 'Cadastrar Usuário'}
                   </Button>
