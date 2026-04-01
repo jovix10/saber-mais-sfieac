@@ -164,7 +164,7 @@ export default function Admin() {
     }
     const { error } = await supabase.from("courses").update({
       title: editingCourse.title, description: editingCourse.description, competence: editingCourse.competence,
-      hours: editingCourse.hours, provider: editingCourse.provider, external_url: editingCourse.external_url, image_url: imageUrl,
+      hours: editingCourse.hours, provider: editingCourse.provider, external_url: editingCourse.external_url, image_url: imageUrl, is_compliance: editingCourse.is_compliance,
     }).eq("id", editingCourse.id);
     if (error) { toast.error("Erro ao atualizar curso"); } else {
       toast.success("Curso atualizado!");
