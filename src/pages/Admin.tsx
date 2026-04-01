@@ -695,6 +695,10 @@ export default function Admin() {
                       <Label className="flex items-center gap-1"><Image className="h-3.5 w-3.5" /> Imagem do Curso</Label>
                       <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)} />
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={courseForm.is_compliance} onCheckedChange={v => setCourseForm({ ...courseForm, is_compliance: v })} />
+                      <Label>Curso de Compliance</Label>
+                    </div>
                     <Button onClick={handleAddCourse} disabled={submitting} className="w-full">
                       {submitting ? 'Criando...' : 'Criar Curso'}
                     </Button>
