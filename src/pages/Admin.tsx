@@ -42,14 +42,15 @@ export default function Admin() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editHoursUser, setEditHoursUser] = useState<Profile | null>(null);
   const [editHoursValue, setEditHoursValue] = useState('');
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
   const [courseImageFile, setCourseImageFile] = useState<File | null>(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
   const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [supportForm, setSupportForm] = useState({ email: 'suporte@fieac.org.br', phone: '(68) 3212-4200', message: 'Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.' });
   const [resetPwUser, setResetPwUser] = useState<Profile | null>(null);
   const [resetPwValue, setResetPwValue] = useState('');
+  const [credentialPopup, setCredentialPopup] = useState<{ name: string; email: string; password: string } | null>(null);
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
