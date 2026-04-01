@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User,
+  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User, ShieldCheck, Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,13 +17,14 @@ const mainItems = [
   { title: "Certificados", url: "/certificates", icon: Upload },
   { title: "Ranking", url: "/leaderboard", icon: Trophy },
   { title: "Conquistas", url: "/badges", icon: Award },
+  { title: "Compliance", url: "/compliance", icon: ShieldCheck },
   { title: "Perfil", url: "/profile", icon: User },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { isAdmin, signOut, profile } = useAuth();
+  const { isAdmin, isGestor, signOut, profile } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -61,6 +62,24 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isGestor && !isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">Gestão</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/manager" className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+                      <Users className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Minha Equipe</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {isAdmin && (
           <SidebarGroup>

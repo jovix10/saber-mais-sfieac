@@ -87,6 +87,7 @@ export type Database = {
           hours: number
           id: string
           image_url: string | null
+          is_compliance: boolean
           provider: string | null
           title: string
         }
@@ -99,6 +100,7 @@ export type Database = {
           hours?: number
           id?: string
           image_url?: string | null
+          is_compliance?: boolean
           provider?: string | null
           title: string
         }
@@ -111,6 +113,7 @@ export type Database = {
           hours?: number
           id?: string
           image_url?: string | null
+          is_compliance?: boolean
           provider?: string | null
           title?: string
         }
@@ -153,6 +156,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          manager_id: string | null
           must_change_password: boolean
           name: string
           total_hours: number
@@ -165,6 +169,7 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          manager_id?: string | null
           must_change_password?: boolean
           name: string
           total_hours?: number
@@ -177,6 +182,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          manager_id?: string | null
           must_change_password?: boolean
           name?: string
           total_hours?: number
@@ -238,7 +244,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "gestor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -366,7 +372,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "gestor"],
     },
   },
 } as const

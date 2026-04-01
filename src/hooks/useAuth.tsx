@@ -17,6 +17,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isGestor: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, meta: { name: string; unit: string; area: string }) => Promise<{ error: string | null }>;
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isGestor, setIsGestor] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -38,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     setIsAdmin(roles?.some((r: any) => r.role === "admin") ?? false);
+    setIsGestor(roles?.some((r: any) => r.role === "gestor") ?? false);
   };
 
   const refreshProfile = async () => {
@@ -54,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsGestor(false);
       }
       setLoading(false);
     });
@@ -89,10 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsGestor(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, isAdmin, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, isAdmin, isGestor, loading, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

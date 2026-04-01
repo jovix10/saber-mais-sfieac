@@ -13,13 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Profile {
-  id: string; name: string; email: string; unit: string; area: string; total_hours: number; avatar_url: string | null; visible_in_ranking: boolean;
+  id: string; name: string; email: string; unit: string; area: string; total_hours: number; avatar_url: string | null; visible_in_ranking: boolean; manager_id: string | null;
 }
 interface Cert {
   id: string; user_id: string; title: string; hours: number; competence: string; status: string; created_at: string; file_url: string | null;
 }
 interface Course {
-  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null;
+  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null; is_compliance: boolean;
 }
 interface UserRole {
   user_id: string; role: string;
@@ -42,14 +42,15 @@ export default function Admin() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editHoursUser, setEditHoursUser] = useState<Profile | null>(null);
   const [editHoursValue, setEditHoursValue] = useState('');
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
   const [courseImageFile, setCourseImageFile] = useState<File | null>(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
   const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [supportForm, setSupportForm] = useState({ email: 'suporte@fieac.org.br', phone: '(68) 3212-4200', message: 'Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.' });
   const [resetPwUser, setResetPwUser] = useState<Profile | null>(null);
   const [resetPwValue, setResetPwValue] = useState('');
+  const [credentialPopup, setCredentialPopup] = useState<{ name: string; email: string; password: string } | null>(null);
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
@@ -76,6 +77,24 @@ export default function Admin() {
   useEffect(() => { fetchAll(); }, []);
 
   const isUserAdmin = (userId: string) => roles.some(r => r.user_id === userId && r.role === 'admin');
+  const isUserGestor = (userId: string) => roles.some(r => r.user_id === userId && r.role === 'gestor');
+
+  const toggleGestor = async (userId: string) => {
+    if (isUserGestor(userId)) {
+      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "gestor" as any);
+      toast.success("Papel de gestor removido");
+    } else {
+      await supabase.from("user_roles").insert({ user_id: userId, role: "gestor" as any });
+      toast.success("Usuário promovido a gestor");
+    }
+    fetchAll();
+  };
+
+  const assignManager = async (userId: string, managerId: string | null) => {
+    await supabase.from("profiles").update({ manager_id: managerId } as any).eq("id", userId);
+    toast.success(managerId ? "Gestor atribuído" : "Gestor removido");
+    fetchAll();
+  };
 
   const toggleAdmin = async (userId: string) => {
     if (isUserAdmin(userId)) {
@@ -141,11 +160,11 @@ export default function Admin() {
     }
     const { error } = await supabase.from("courses").insert({
       title: courseForm.title, description: courseForm.description, competence: courseForm.competence,
-      hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl,
+      hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl, is_compliance: courseForm.is_compliance,
     });
     if (error) { toast.error("Erro ao criar curso"); } else {
       toast.success("Curso criado!");
-      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
+      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
       setCourseImageFile(null);
       setShowCourseDialog(false);
       fetchAll();
@@ -163,7 +182,7 @@ export default function Admin() {
     }
     const { error } = await supabase.from("courses").update({
       title: editingCourse.title, description: editingCourse.description, competence: editingCourse.competence,
-      hours: editingCourse.hours, provider: editingCourse.provider, external_url: editingCourse.external_url, image_url: imageUrl,
+      hours: editingCourse.hours, provider: editingCourse.provider, external_url: editingCourse.external_url, image_url: imageUrl, is_compliance: editingCourse.is_compliance,
     }).eq("id", editingCourse.id);
     if (error) { toast.error("Erro ao atualizar curso"); } else {
       toast.success("Curso atualizado!");
@@ -266,13 +285,23 @@ export default function Admin() {
   const handleAddUser = async () => {
     if (!userForm.name || !userForm.email || !userForm.password) return;
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: userForm.email, password: userForm.password,
       options: { data: { name: userForm.name, unit: userForm.unit, area: userForm.area } },
     });
     if (error) { toast.error(error.message); } else {
-      toast.success("Usuário cadastrado com sucesso!");
-      setUserForm({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
+      // Assign role if gestor
+      if (userForm.role === 'gestor' && data.user) {
+        await supabase.from("user_roles").insert({ user_id: data.user.id, role: 'gestor' as any });
+      }
+      // Assign manager
+      if (userForm.manager_id && data.user) {
+        setTimeout(async () => {
+          await supabase.from("profiles").update({ manager_id: userForm.manager_id } as any).eq("id", data.user!.id);
+        }, 2000);
+      }
+      setCredentialPopup({ name: userForm.name, email: userForm.email, password: userForm.password });
+      setUserForm({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
       setShowUserDialog(false);
       setTimeout(fetchAll, 1500);
     }
@@ -413,6 +442,30 @@ export default function Admin() {
                     <div className="space-y-2">
                       <Label>Área</Label>
                       <Input value={userForm.area} onChange={e => setUserForm({ ...userForm, area: e.target.value })} placeholder="Ex: TI" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Tipo de Acesso</Label>
+                      <Select value={userForm.role} onValueChange={v => setUserForm({ ...userForm, role: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Colaborador</SelectItem>
+                          <SelectItem value="gestor">Gestor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Gestor Responsável</Label>
+                      <Select value={userForm.manager_id} onValueChange={v => setUserForm({ ...userForm, manager_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {profiles.filter(p => roles.some(r => r.user_id === p.id && (r.role === 'gestor' || r.role === 'admin'))).map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <Button onClick={handleAddUser} disabled={submitting} className="w-full">
@@ -660,6 +713,10 @@ export default function Admin() {
                       <Label className="flex items-center gap-1"><Image className="h-3.5 w-3.5" /> Imagem do Curso</Label>
                       <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)} />
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={courseForm.is_compliance} onCheckedChange={v => setCourseForm({ ...courseForm, is_compliance: v })} />
+                      <Label>Curso de Compliance</Label>
+                    </div>
                     <Button onClick={handleAddCourse} disabled={submitting} className="w-full">
                       {submitting ? 'Criando...' : 'Criar Curso'}
                     </Button>
@@ -747,6 +804,10 @@ export default function Admin() {
                   {editingCourse.image_url && !courseImageFile && (
                     <img src={editingCourse.image_url} alt="" className="h-16 w-16 rounded-lg object-cover mt-1" />
                   )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={editingCourse.is_compliance} onCheckedChange={v => setEditingCourse({ ...editingCourse, is_compliance: v })} />
+                  <Label>Curso de Compliance</Label>
                 </div>
                 <Button onClick={handleEditCourse} disabled={submitting} className="w-full gap-2">
                   <Save className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Alterações'}
@@ -940,6 +1001,25 @@ export default function Admin() {
                         <Shield className="h-3.5 w-3.5" /> {isUserAdmin(selectedUser.id) ? 'Remover Admin' : 'Tornar Admin'}
                       </Button>
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant={isUserGestor(selectedUser.id) ? "default" : "outline"} onClick={() => toggleGestor(selectedUser.id)} className="gap-1">
+                        <Users className="h-3.5 w-3.5" /> {isUserGestor(selectedUser.id) ? 'Remover Gestor' : 'Tornar Gestor'}
+                      </Button>
+                      <Select
+                        value={selectedUser.manager_id || ''}
+                        onValueChange={v => assignManager(selectedUser.id, v || null)}
+                      >
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Atribuir Gestor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sem gestor</SelectItem>
+                          {profiles.filter(p => isUserGestor(p.id) || isUserAdmin(p.id)).map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Button variant="outline" onClick={() => { setResetPwUser(selectedUser); setResetPwValue(''); }} className="w-full gap-1">
                       <KeyRound className="h-3.5 w-3.5" /> Redefinir Senha
                     </Button>
@@ -970,8 +1050,36 @@ export default function Admin() {
             )}
           </DialogContent>
         </Dialog>
+        {/* Credential Popup */}
+        <Dialog open={!!credentialPopup} onOpenChange={() => setCredentialPopup(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>✅ Colaborador Cadastrado com Sucesso!</DialogTitle></DialogHeader>
+            {credentialPopup && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Copie as informações abaixo e envie para o colaborador:</p>
+                <div className="bg-muted rounded-xl p-4 space-y-1 text-sm font-mono">
+                  <p>Olá {credentialPopup.name},</p>
+                  <p className="mt-2">Seu acesso à plataforma <strong>Saber+</strong> foi criado!</p>
+                  <p className="mt-2">📧 <strong>Login:</strong> {credentialPopup.email}</p>
+                  <p>🔑 <strong>Senha provisória:</strong> {credentialPopup.password}</p>
+                  <p className="mt-2">⚠️ Ao fazer o primeiro login, você será solicitado a criar uma nova senha.</p>
+                  <p className="mt-2">Acesse: {window.location.origin}</p>
+                </div>
+                <Button
+                  className="w-full gap-2"
+                  onClick={() => {
+                    const text = `Olá ${credentialPopup.name},\n\nSeu acesso à plataforma Saber+ foi criado!\n\n📧 Login: ${credentialPopup.email}\n🔑 Senha provisória: ${credentialPopup.password}\n\n⚠️ Ao fazer o primeiro login, você será solicitado a criar uma nova senha.\n\nAcesse: ${window.location.origin}`;
+                    navigator.clipboard.writeText(text);
+                    toast.success("Texto copiado para a área de transferência!");
+                  }}
+                >
+                  📋 Copiar Mensagem
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
 }
-
