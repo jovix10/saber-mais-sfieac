@@ -146,7 +146,7 @@ export default function Admin() {
     });
     if (error) { toast.error("Erro ao criar curso"); } else {
       toast.success("Curso criado!");
-      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '' });
+      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
       setCourseImageFile(null);
       setShowCourseDialog(false);
       fetchAll();
