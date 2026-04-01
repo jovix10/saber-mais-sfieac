@@ -77,6 +77,24 @@ export default function Admin() {
   useEffect(() => { fetchAll(); }, []);
 
   const isUserAdmin = (userId: string) => roles.some(r => r.user_id === userId && r.role === 'admin');
+  const isUserGestor = (userId: string) => roles.some(r => r.user_id === userId && r.role === 'gestor');
+
+  const toggleGestor = async (userId: string) => {
+    if (isUserGestor(userId)) {
+      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "gestor" as any);
+      toast.success("Papel de gestor removido");
+    } else {
+      await supabase.from("user_roles").insert({ user_id: userId, role: "gestor" as any });
+      toast.success("Usuário promovido a gestor");
+    }
+    fetchAll();
+  };
+
+  const assignManager = async (userId: string, managerId: string | null) => {
+    await supabase.from("profiles").update({ manager_id: managerId } as any).eq("id", userId);
+    toast.success(managerId ? "Gestor atribuído" : "Gestor removido");
+    fetchAll();
+  };
 
   const toggleAdmin = async (userId: string) => {
     if (isUserAdmin(userId)) {
