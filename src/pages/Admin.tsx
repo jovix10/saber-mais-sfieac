@@ -787,6 +787,10 @@ export default function Admin() {
                     <img src={editingCourse.image_url} alt="" className="h-16 w-16 rounded-lg object-cover mt-1" />
                   )}
                 </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={editingCourse.is_compliance} onCheckedChange={v => setEditingCourse({ ...editingCourse, is_compliance: v })} />
+                  <Label>Curso de Compliance</Label>
+                </div>
                 <Button onClick={handleEditCourse} disabled={submitting} className="w-full gap-2">
                   <Save className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
