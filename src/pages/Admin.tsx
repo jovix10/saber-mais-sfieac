@@ -267,13 +267,23 @@ export default function Admin() {
   const handleAddUser = async () => {
     if (!userForm.name || !userForm.email || !userForm.password) return;
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: userForm.email, password: userForm.password,
       options: { data: { name: userForm.name, unit: userForm.unit, area: userForm.area } },
     });
     if (error) { toast.error(error.message); } else {
-      toast.success("Usuário cadastrado com sucesso!");
-      setUserForm({ name: '', email: '', password: '', unit: 'FIEAC', area: '' });
+      // Assign role if gestor
+      if (userForm.role === 'gestor' && data.user) {
+        await supabase.from("user_roles").insert({ user_id: data.user.id, role: 'gestor' as any });
+      }
+      // Assign manager
+      if (userForm.manager_id && data.user) {
+        setTimeout(async () => {
+          await supabase.from("profiles").update({ manager_id: userForm.manager_id } as any).eq("id", data.user!.id);
+        }, 2000);
+      }
+      setCredentialPopup({ name: userForm.name, email: userForm.email, password: userForm.password });
+      setUserForm({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
       setShowUserDialog(false);
       setTimeout(fetchAll, 1500);
     }
