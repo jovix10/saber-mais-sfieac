@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User,
+  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User, ShieldCheck, Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ const mainItems = [
   { title: "Certificados", url: "/certificates", icon: Upload },
   { title: "Ranking", url: "/leaderboard", icon: Trophy },
   { title: "Conquistas", url: "/badges", icon: Award },
+  { title: "Compliance", url: "/compliance", icon: ShieldCheck },
   { title: "Perfil", url: "/profile", icon: User },
 ];
 
