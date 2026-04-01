@@ -24,7 +24,7 @@ const mainItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { isAdmin, signOut, profile } = useAuth();
+  const { isAdmin, isGestor, signOut, profile } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
