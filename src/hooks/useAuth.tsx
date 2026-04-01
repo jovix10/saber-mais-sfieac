@@ -93,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsGestor(false);
   };
 
   return (
