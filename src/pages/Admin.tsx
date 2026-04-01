@@ -142,7 +142,7 @@ export default function Admin() {
     }
     const { error } = await supabase.from("courses").insert({
       title: courseForm.title, description: courseForm.description, competence: courseForm.competence,
-      hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl,
+      hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl, is_compliance: courseForm.is_compliance,
     });
     if (error) { toast.error("Erro ao criar curso"); } else {
       toast.success("Curso criado!");
