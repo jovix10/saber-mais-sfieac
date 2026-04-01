@@ -1013,8 +1013,36 @@ export default function Admin() {
             )}
           </DialogContent>
         </Dialog>
+        {/* Credential Popup */}
+        <Dialog open={!!credentialPopup} onOpenChange={() => setCredentialPopup(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>✅ Colaborador Cadastrado com Sucesso!</DialogTitle></DialogHeader>
+            {credentialPopup && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Copie as informações abaixo e envie para o colaborador:</p>
+                <div className="bg-muted rounded-xl p-4 space-y-1 text-sm font-mono">
+                  <p>Olá {credentialPopup.name},</p>
+                  <p className="mt-2">Seu acesso à plataforma <strong>Saber+</strong> foi criado!</p>
+                  <p className="mt-2">📧 <strong>Login:</strong> {credentialPopup.email}</p>
+                  <p>🔑 <strong>Senha provisória:</strong> {credentialPopup.password}</p>
+                  <p className="mt-2">⚠️ Ao fazer o primeiro login, você será solicitado a criar uma nova senha.</p>
+                  <p className="mt-2">Acesse: {window.location.origin}</p>
+                </div>
+                <Button
+                  className="w-full gap-2"
+                  onClick={() => {
+                    const text = `Olá ${credentialPopup.name},\n\nSeu acesso à plataforma Saber+ foi criado!\n\n📧 Login: ${credentialPopup.email}\n🔑 Senha provisória: ${credentialPopup.password}\n\n⚠️ Ao fazer o primeiro login, você será solicitado a criar uma nova senha.\n\nAcesse: ${window.location.origin}`;
+                    navigator.clipboard.writeText(text);
+                    toast.success("Texto copiado para a área de transferência!");
+                  }}
+                >
+                  📋 Copiar Mensagem
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
 }
-
