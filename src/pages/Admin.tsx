@@ -1001,6 +1001,25 @@ export default function Admin() {
                         <Shield className="h-3.5 w-3.5" /> {isUserAdmin(selectedUser.id) ? 'Remover Admin' : 'Tornar Admin'}
                       </Button>
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant={isUserGestor(selectedUser.id) ? "default" : "outline"} onClick={() => toggleGestor(selectedUser.id)} className="gap-1">
+                        <Users className="h-3.5 w-3.5" /> {isUserGestor(selectedUser.id) ? 'Remover Gestor' : 'Tornar Gestor'}
+                      </Button>
+                      <Select
+                        value={selectedUser.manager_id || ''}
+                        onValueChange={v => assignManager(selectedUser.id, v || null)}
+                      >
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Atribuir Gestor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sem gestor</SelectItem>
+                          {profiles.filter(p => isUserGestor(p.id) || isUserAdmin(p.id)).map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Button variant="outline" onClick={() => { setResetPwUser(selectedUser); setResetPwValue(''); }} className="w-full gap-1">
                       <KeyRound className="h-3.5 w-3.5" /> Redefinir Senha
                     </Button>
