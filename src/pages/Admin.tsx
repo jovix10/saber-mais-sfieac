@@ -521,7 +521,7 @@ export default function Admin() {
                 <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
                     Envie um arquivo CSV com o formato: <code className="bg-muted px-1 rounded">nome;email;senha;unidade;area</code>
