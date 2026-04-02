@@ -802,7 +802,7 @@ export default function Admin() {
         {/* Edit Course Dialog */}
         <Dialog open={showEditCourseDialog} onOpenChange={setShowEditCourseDialog}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Editar Curso</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Editar Curso</DialogTitle><DialogDescription>Modifique os dados do curso.</DialogDescription></DialogHeader>
             {editingCourse && (
               <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-2">
