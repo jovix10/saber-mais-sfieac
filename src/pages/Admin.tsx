@@ -453,7 +453,7 @@ export default function Admin() {
                 <Button className="gap-2"><Plus className="h-4 w-4" /> Novo Usuário</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Cadastrar Usuário</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Cadastrar Usuário</DialogTitle><DialogDescription>Preencha os dados do novo colaborador.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Nome completo</Label>
