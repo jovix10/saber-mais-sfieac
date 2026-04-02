@@ -44,6 +44,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [certCount, setCertCount] = useState(0);
   const [rankPosition, setRankPosition] = useState<number | null>(null);
+  const [myTasks, setMyTasks] = useState<TeamTask[]>([]);
+  const [showEvidenceDialog, setShowEvidenceDialog] = useState(false);
+  const [evidenceTask, setEvidenceTask] = useState<TeamTask | null>(null);
+  const [evidenceNote, setEvidenceNote] = useState('');
 
   useEffect(() => {
     if (!profile) return;
