@@ -1094,7 +1094,7 @@ export default function Admin() {
         {/* Credential Popup */}
         <Dialog open={!!credentialPopup} onOpenChange={() => setCredentialPopup(null)}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>✅ Colaborador Cadastrado com Sucesso!</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>✅ Colaborador Cadastrado com Sucesso!</DialogTitle><DialogDescription>Envie as credenciais abaixo para o novo colaborador.</DialogDescription></DialogHeader>
             {credentialPopup && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Copie as informações abaixo e envie para o colaborador:</p>
