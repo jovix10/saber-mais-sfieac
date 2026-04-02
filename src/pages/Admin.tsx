@@ -457,10 +457,10 @@ export default function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label>Gestor Responsável</Label>
-                      <Select value={userForm.manager_id} onValueChange={v => setUserForm({ ...userForm, manager_id: v })}>
+                      <Select value={userForm.manager_id || '__none__'} onValueChange={v => setUserForm({ ...userForm, manager_id: v === '__none__' ? '' : v })}>
                         <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="__none__">Nenhum</SelectItem>
                           {profiles.filter(p => roles.some(r => r.user_id === p.id && (r.role === 'gestor' || r.role === 'admin'))).map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
