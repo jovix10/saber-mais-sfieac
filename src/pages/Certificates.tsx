@@ -182,8 +182,6 @@ export default function Certificates() {
     </AppLayout>
   );
 }
-  const { user } = useAuth();
-  const [showForm, setShowForm] = useState(false);
   const [certs, setCerts] = useState<Cert[]>([]);
   const [title, setTitle] = useState('');
   const [hours, setHours] = useState('');
