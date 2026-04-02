@@ -27,7 +27,7 @@ interface Cert {
 }
 
 export default function Certificates() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [certs, setCerts] = useState<Cert[]>([]);
   const [title, setTitle] = useState('');
@@ -51,7 +51,6 @@ export default function Certificates() {
     }
     setSubmitting(true);
 
-    // Upload PDF
     const fileExt = file.name.split('.').pop();
     const filePath = `${user.id}/${Date.now()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage.from("certificates").upload(filePath, file);
@@ -73,6 +72,17 @@ export default function Certificates() {
       toast.error("Erro ao enviar certificado");
     } else {
       toast.success("Certificado enviado para validação!");
+      
+      // Notify gestor if user has one
+      if (profile?.manager_id) {
+        await supabase.from("notifications").insert({
+          user_id: profile.manager_id,
+          title: '📄 Novo Certificado da Equipe',
+          message: `${profile.name} enviou o certificado "${title}" (${hours}h - ${competence}) para validação.`,
+          type: 'info',
+        });
+      }
+
       setTitle(''); setHours(''); setCompetence('Digital'); setShowForm(false); setFile(null);
       fetchCerts();
     }
@@ -112,6 +122,7 @@ export default function Certificates() {
                     <SelectItem value="Digital">Digital</SelectItem>
                     <SelectItem value="Ambiental">Ambiental</SelectItem>
                     <SelectItem value="Inclusiva">Inclusiva</SelectItem>
+                    <SelectItem value="Compliance">Compliance</SelectItem>
                     <SelectItem value="Outros">Outros</SelectItem>
                   </SelectContent>
                 </Select>
