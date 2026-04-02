@@ -60,6 +60,10 @@ export default function Dashboard() {
         setRankPosition(pos >= 0 ? pos + 1 : null);
       }
     });
+    // Fetch tasks assigned to me
+    supabase.from("team_tasks").select("*").eq("assigned_to", profile.id).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setMyTasks(data as TeamTask[]);
+    });
   }, [profile]);
 
   if (!profile) return null;
