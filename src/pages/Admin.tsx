@@ -985,7 +985,7 @@ export default function Admin() {
         {/* User Detail Dialog */}
         <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle><DialogDescription>Informações e ações do colaborador.</DialogDescription></DialogHeader>
             {selectedUser && (() => {
               const userCerts = certs.filter(c => c.user_id === selectedUser.id);
               const approved = userCerts.filter(c => c.status === 'approved').length;
