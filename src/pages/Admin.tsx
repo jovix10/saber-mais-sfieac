@@ -643,7 +643,7 @@ export default function Admin() {
         {/* Edit Hours Dialog */}
         <Dialog open={showEditHoursDialog} onOpenChange={setShowEditHoursDialog}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Editar Horas - {editHoursUser?.name}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Editar Horas - {editHoursUser?.name}</DialogTitle><DialogDescription>Ajuste o total de horas do colaborador.</DialogDescription></DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">Ajuste o total de horas do colaborador. Atual: {editHoursUser ? Number(editHoursUser.total_hours) : 0}h</p>
               <div className="space-y-2">
