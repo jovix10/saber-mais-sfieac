@@ -158,6 +158,90 @@ export default function Dashboard() {
           </motion.div>
         )}
 
+        {/* My Tasks from manager */}
+        {myTasks.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="glass-card rounded-2xl p-6">
+            <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" /> Tarefas Atribuídas
+            </h3>
+            <div className="space-y-3">
+              {myTasks.map(task => {
+                const statusColors: Record<string, string> = {
+                  pendente: 'bg-amber-500/10 text-amber-600',
+                  'em andamento': 'bg-blue-500/10 text-blue-600',
+                  concluído: 'bg-emerald-500/10 text-emerald-600',
+                };
+                return (
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-muted/50 justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{task.title}</p>
+                      {task.description && <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[task.status] || 'bg-muted'}`}>
+                          {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                        </span>
+                        {task.due_date && <span className="text-xs text-muted-foreground">📅 {new Date(task.due_date).toLocaleDateString('pt-BR')}</span>}
+                        {task.evidence_note && <span className="text-xs text-emerald-600">📎 Evidência enviada</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {task.status !== 'concluído' && (
+                        <>
+                          <Select value={task.status} onValueChange={async v => {
+                            await supabase.from("team_tasks").update({ status: v } as any).eq("id", task.id);
+                            setMyTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: v } : t));
+                            toast.success("Status atualizado!");
+                          }}>
+                            <SelectTrigger className="h-8 w-[130px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pendente">Pendente</SelectItem>
+                              <SelectItem value="em andamento">Em Andamento</SelectItem>
+                              <SelectItem value="concluído">Concluído</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button size="sm" variant="outline" className="gap-1 h-8" onClick={() => { setEvidenceTask(task); setEvidenceNote(task.evidence_note || ''); setShowEvidenceDialog(true); }}>
+                            <UploadIcon className="h-3 w-3" /> Evidência
+                          </Button>
+                        </>
+                      )}
+                      {task.status === 'concluído' && <CheckCircle className="h-5 w-5 text-emerald-500" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Evidence Dialog */}
+        <Dialog open={showEvidenceDialog} onOpenChange={setShowEvidenceDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Enviar Evidência</DialogTitle>
+              <DialogDescription>Descreva como você concluiu esta tarefa.</DialogDescription>
+            </DialogHeader>
+            {evidenceTask && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Tarefa: <strong>{evidenceTask.title}</strong></p>
+                <div className="space-y-2">
+                  <Label>Descrição da evidência</Label>
+                  <Input value={evidenceNote} onChange={e => setEvidenceNote(e.target.value)} placeholder="Ex: Concluí o curso, certificado enviado" />
+                </div>
+                <Button className="w-full gap-2" onClick={async () => {
+                  await supabase.from("team_tasks").update({ evidence_note: evidenceNote, status: 'concluído' } as any).eq("id", evidenceTask.id);
+                  setMyTasks(prev => prev.map(t => t.id === evidenceTask.id ? { ...t, evidence_note: evidenceNote, status: 'concluído' } : t));
+                  toast.success("Evidência enviada e tarefa concluída!");
+                  setShowEvidenceDialog(false);
+                }}>
+                  <CheckCircle className="h-4 w-4" /> Enviar e Concluir
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Learning trail map */}
         <LearningTrailMap />
 
