@@ -457,10 +457,10 @@ export default function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label>Gestor Responsável</Label>
-                      <Select value={userForm.manager_id} onValueChange={v => setUserForm({ ...userForm, manager_id: v })}>
+                      <Select value={userForm.manager_id || '__none__'} onValueChange={v => setUserForm({ ...userForm, manager_id: v === '__none__' ? '' : v })}>
                         <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="__none__">Nenhum</SelectItem>
                           {profiles.filter(p => roles.some(r => r.user_id === p.id && (r.role === 'gestor' || r.role === 'admin'))).map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
@@ -1006,14 +1006,14 @@ export default function Admin() {
                         <Users className="h-3.5 w-3.5" /> {isUserGestor(selectedUser.id) ? 'Remover Gestor' : 'Tornar Gestor'}
                       </Button>
                       <Select
-                        value={selectedUser.manager_id || ''}
-                        onValueChange={v => assignManager(selectedUser.id, v || null)}
+                        value={selectedUser.manager_id || '__none__'}
+                        onValueChange={v => assignManager(selectedUser.id, v === '__none__' ? null : v)}
                       >
                         <SelectTrigger className="h-9 text-xs">
                           <SelectValue placeholder="Atribuir Gestor" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sem gestor</SelectItem>
+                          <SelectItem value="__none__">Sem gestor</SelectItem>
                           {profiles.filter(p => isUserGestor(p.id) || isUserAdmin(p.id)).map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
