@@ -182,7 +182,6 @@ export default function Certificates() {
     </AppLayout>
   );
 }
-  const [certs, setCerts] = useState<Cert[]>([]);
   const [title, setTitle] = useState('');
   const [hours, setHours] = useState('');
   const [competence, setCompetence] = useState('Digital');
