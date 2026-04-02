@@ -1074,7 +1074,7 @@ export default function Admin() {
         {/* Reset Password Dialog */}
         <Dialog open={!!resetPwUser} onOpenChange={() => setResetPwUser(null)}>
           <DialogContent className="max-w-sm">
-            <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle><DialogDescription>Defina uma nova senha para o colaborador.</DialogDescription></DialogHeader>
             {resetPwUser && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Nova senha para <strong>{resetPwUser.name}</strong></p>
