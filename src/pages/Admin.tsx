@@ -714,7 +714,7 @@ export default function Admin() {
                   <Button className="gap-2"><Plus className="h-4 w-4" /> Novo Curso</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Adicionar Curso</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>Adicionar Curso</DialogTitle><DialogDescription>Preencha os dados do novo curso.</DialogDescription></DialogHeader>
                   <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                     <div className="space-y-2">
                       <Label>Título</Label>
