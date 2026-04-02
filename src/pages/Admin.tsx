@@ -118,6 +118,7 @@ export default function Admin() {
     if (error) { toast.error("Erro ao atualizar certificado"); return; }
     const cert = certs.find(c => c.id === certId);
     if (cert) {
+      // Notify the user
       await supabase.from("notifications").insert({
         user_id: cert.user_id,
         title: status === 'approved' ? '✅ Certificado Aprovado!' : '❌ Certificado Reprovado',
@@ -127,12 +128,36 @@ export default function Admin() {
       if (status === 'approved') {
         const user = profiles.find(p => p.id === cert.user_id);
         if (user) {
+          // Standard achievement
           await supabase.from("achievements").insert({
             user_id: cert.user_id,
             user_name: user.name,
             user_unit: user.unit,
             description: `completou "${cert.title}" (${cert.hours}h)`,
           });
+          // Compliance exclusive achievement
+          if (cert.competence === 'Compliance') {
+            const complianceCerts = certs.filter(c => c.user_id === cert.user_id && c.status === 'approved' && c.competence === 'Compliance').length + 1;
+            let complianceBadge = '';
+            if (complianceCerts === 1) complianceBadge = '🛡️ Guardião do Compliance - Nível 1';
+            else if (complianceCerts === 3) complianceBadge = '🛡️ Sentinela do Compliance - Nível 2';
+            else if (complianceCerts === 5) complianceBadge = '🛡️ Mestre do Compliance - Nível 3';
+            else if (complianceCerts === 10) complianceBadge = '🛡️ Lenda do Compliance - Nível Máximo';
+            if (complianceBadge) {
+              await supabase.from("achievements").insert({
+                user_id: cert.user_id,
+                user_name: user.name,
+                user_unit: user.unit,
+                description: complianceBadge,
+              });
+              await supabase.from("notifications").insert({
+                user_id: cert.user_id,
+                title: '🏆 Conquista Exclusiva de Compliance!',
+                message: `Você desbloqueou: ${complianceBadge}`,
+                type: 'success',
+              });
+            }
+          }
         }
       }
     }
