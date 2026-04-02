@@ -11,6 +11,7 @@ interface Profile {
   total_hours: number;
   avatar_url: string | null;
   must_change_password: boolean;
+  manager_id: string | null;
 }
 
 interface AuthContextType {
