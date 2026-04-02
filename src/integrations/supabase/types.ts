@@ -191,6 +191,51 @@ export type Database = {
         }
         Relationships: []
       }
+      team_tasks: {
+        Row: {
+          assigned_by: string
+          assigned_to: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          evidence_note: string | null
+          evidence_url: string | null
+          id: string
+          status: string
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          assigned_to: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          evidence_note?: string | null
+          evidence_url?: string | null
+          id?: string
+          status?: string
+          task_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          assigned_to?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          evidence_note?: string | null
+          evidence_url?: string | null
+          id?: string
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       unit_goals: {
         Row: {
           goal_hours: number

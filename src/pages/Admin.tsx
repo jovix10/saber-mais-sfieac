@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle, KeyRound } from "lucide-react";
@@ -453,7 +453,7 @@ export default function Admin() {
                 <Button className="gap-2"><Plus className="h-4 w-4" /> Novo Usuário</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Cadastrar Usuário</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Cadastrar Usuário</DialogTitle><DialogDescription>Preencha os dados do novo colaborador.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Nome completo</Label>
@@ -521,7 +521,7 @@ export default function Admin() {
                 <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
                     Envie um arquivo CSV com o formato: <code className="bg-muted px-1 rounded">nome;email;senha;unidade;area</code>
@@ -643,7 +643,7 @@ export default function Admin() {
         {/* Edit Hours Dialog */}
         <Dialog open={showEditHoursDialog} onOpenChange={setShowEditHoursDialog}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Editar Horas - {editHoursUser?.name}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Editar Horas - {editHoursUser?.name}</DialogTitle><DialogDescription>Ajuste o total de horas do colaborador.</DialogDescription></DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">Ajuste o total de horas do colaborador. Atual: {editHoursUser ? Number(editHoursUser.total_hours) : 0}h</p>
               <div className="space-y-2">
@@ -714,7 +714,7 @@ export default function Admin() {
                   <Button className="gap-2"><Plus className="h-4 w-4" /> Novo Curso</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Adicionar Curso</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>Adicionar Curso</DialogTitle><DialogDescription>Preencha os dados do novo curso.</DialogDescription></DialogHeader>
                   <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                     <div className="space-y-2">
                       <Label>Título</Label>
@@ -802,7 +802,7 @@ export default function Admin() {
         {/* Edit Course Dialog */}
         <Dialog open={showEditCourseDialog} onOpenChange={setShowEditCourseDialog}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Editar Curso</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Editar Curso</DialogTitle><DialogDescription>Modifique os dados do curso.</DialogDescription></DialogHeader>
             {editingCourse && (
               <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-2">
@@ -985,7 +985,7 @@ export default function Admin() {
         {/* User Detail Dialog */}
         <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle><DialogDescription>Informações e ações do colaborador.</DialogDescription></DialogHeader>
             {selectedUser && (() => {
               const userCerts = certs.filter(c => c.user_id === selectedUser.id);
               const approved = userCerts.filter(c => c.status === 'approved').length;
@@ -1074,7 +1074,7 @@ export default function Admin() {
         {/* Reset Password Dialog */}
         <Dialog open={!!resetPwUser} onOpenChange={() => setResetPwUser(null)}>
           <DialogContent className="max-w-sm">
-            <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle><DialogDescription>Defina uma nova senha para o colaborador.</DialogDescription></DialogHeader>
             {resetPwUser && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Nova senha para <strong>{resetPwUser.name}</strong></p>
@@ -1094,7 +1094,7 @@ export default function Admin() {
         {/* Credential Popup */}
         <Dialog open={!!credentialPopup} onOpenChange={() => setCredentialPopup(null)}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>✅ Colaborador Cadastrado com Sucesso!</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>✅ Colaborador Cadastrado com Sucesso!</DialogTitle><DialogDescription>Envie as credenciais abaixo para o novo colaborador.</DialogDescription></DialogHeader>
             {credentialPopup && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Copie as informações abaixo e envie para o colaborador:</p>
