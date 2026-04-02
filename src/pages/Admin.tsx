@@ -341,16 +341,32 @@ export default function Admin() {
     const lines = text.split('\n').filter(l => l.trim());
     const header = lines[0].toLowerCase();
     if (!header.includes('nome') || !header.includes('email') || !header.includes('senha')) {
-      toast.error("Formato inválido. Use: nome;email;senha;unidade;area");
+      toast.error("Formato inválido. Use: nome;email;senha;unidade;area;cargo;gestor_email");
       setSubmitting(false); return;
     }
     let success = 0, errors = 0;
     for (let i = 1; i < lines.length; i++) {
       const parts = lines[i].split(';').map(s => s.trim());
       if (parts.length < 3) continue;
-      const [name, email, password, unit, area] = parts;
-      const { error } = await supabase.auth.signUp({ email, password, options: { data: { name, unit: unit || 'FIEAC', area: area || '' } } });
-      if (error) errors++; else success++;
+      const [name, email, password, unit, area, cargo, gestorEmail] = parts;
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name, unit: unit || 'FIEAC', area: area || '' } } });
+      if (error) { errors++; continue; }
+      if (data.user) {
+        // Assign role if gestor
+        if (cargo?.toLowerCase() === 'gestor') {
+          await supabase.from("user_roles").insert({ user_id: data.user.id, role: 'gestor' as any });
+        }
+        // Assign manager by email
+        if (gestorEmail) {
+          const gestor = profiles.find(p => p.email.toLowerCase() === gestorEmail.toLowerCase());
+          if (gestor) {
+            setTimeout(async () => {
+              await supabase.from("profiles").update({ manager_id: gestor.id } as any).eq("id", data.user!.id);
+            }, 2000);
+          }
+        }
+      }
+      success++;
     }
     toast.success(`${success} usuários cadastrados. ${errors > 0 ? `${errors} erros.` : ''}`);
     setShowBulkDialog(false); setSubmitting(false);
@@ -358,7 +374,7 @@ export default function Admin() {
   };
 
   const downloadTemplate = () => {
-    const csv = "nome;email;senha;unidade;area\nJoão Silva;joao@fieac.org.br;Senha@123;SESI;TI\nMaria Santos;maria@fieac.org.br;Senha@456;SENAI;RH";
+    const csv = "nome;email;senha;unidade;area;cargo;gestor_email\nJoão Silva;joao@fieac.org.br;Senha@123;SESI;TI;usuario;\nMaria Santos;maria@fieac.org.br;Senha@456;SENAI;RH;gestor;\nAna Lima;ana@fieac.org.br;Senha@789;SESI;Financeiro;usuario;maria@fieac.org.br";
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'template_usuarios.csv'; a.click();
