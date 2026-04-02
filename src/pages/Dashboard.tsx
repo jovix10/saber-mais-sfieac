@@ -9,9 +9,27 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Award, BookOpen, Clock, Trophy, Star, TrendingUp } from "lucide-react";
+import { Award, BookOpen, Clock, Trophy, Star, TrendingUp, ClipboardList, CheckCircle, Upload as UploadIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import type { Unit } from "@/lib/mock-data";
+
+interface TeamTask {
+  id: string;
+  title: string;
+  description: string;
+  task_type: string;
+  status: string;
+  due_date: string | null;
+  evidence_url: string | null;
+  evidence_note: string | null;
+  assigned_by: string;
+}
 
 const BADGE_LEVELS = [
   { name: 'Explorador', hours: 5 },
