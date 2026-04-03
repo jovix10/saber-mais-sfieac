@@ -191,6 +191,15 @@ export default function Dashboard() {
                             await supabase.from("team_tasks").update({ status: v } as any).eq("id", task.id);
                             setMyTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: v } : t));
                             toast.success("Status atualizado!");
+                            // Notify manager when task is completed
+                            if (v === 'concluído' && profile) {
+                              await supabase.from("notifications").insert({
+                                user_id: task.assigned_by,
+                                title: "Tarefa concluída",
+                                message: `${profile.name} concluiu a tarefa "${task.title}"`,
+                                type: "success",
+                              });
+                            }
                           }}>
                             <SelectTrigger className="h-8 w-[130px] text-xs">
                               <SelectValue />
