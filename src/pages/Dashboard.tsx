@@ -191,6 +191,15 @@ export default function Dashboard() {
                             await supabase.from("team_tasks").update({ status: v } as any).eq("id", task.id);
                             setMyTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: v } : t));
                             toast.success("Status atualizado!");
+                            // Notify manager when task is completed
+                            if (v === 'concluído' && profile) {
+                              await supabase.from("notifications").insert({
+                                user_id: task.assigned_by,
+                                title: "Tarefa concluída",
+                                message: `${profile.name} concluiu a tarefa "${task.title}"`,
+                                type: "success",
+                              });
+                            }
                           }}>
                             <SelectTrigger className="h-8 w-[130px] text-xs">
                               <SelectValue />
@@ -229,12 +238,21 @@ export default function Dashboard() {
                   <Label>Descrição da evidência</Label>
                   <Input value={evidenceNote} onChange={e => setEvidenceNote(e.target.value)} placeholder="Ex: Concluí o curso, certificado enviado" />
                 </div>
-                <Button className="w-full gap-2" onClick={async () => {
-                  await supabase.from("team_tasks").update({ evidence_note: evidenceNote, status: 'concluído' } as any).eq("id", evidenceTask.id);
-                  setMyTasks(prev => prev.map(t => t.id === evidenceTask.id ? { ...t, evidence_note: evidenceNote, status: 'concluído' } : t));
-                  toast.success("Evidência enviada e tarefa concluída!");
-                  setShowEvidenceDialog(false);
-                }}>
+                 <Button className="w-full gap-2" onClick={async () => {
+                   await supabase.from("team_tasks").update({ evidence_note: evidenceNote, status: 'concluído' } as any).eq("id", evidenceTask.id);
+                   setMyTasks(prev => prev.map(t => t.id === evidenceTask.id ? { ...t, evidence_note: evidenceNote, status: 'concluído' } : t));
+                   // Notify manager
+                   if (profile) {
+                     await supabase.from("notifications").insert({
+                       user_id: evidenceTask.assigned_by,
+                       title: "Tarefa concluída com evidência",
+                       message: `${profile.name} concluiu a tarefa "${evidenceTask.title}" e enviou evidência.`,
+                       type: "success",
+                     });
+                   }
+                   toast.success("Evidência enviada e tarefa concluída!");
+                   setShowEvidenceDialog(false);
+                 }}>
                   <CheckCircle className="h-4 w-4" /> Enviar e Concluir
                 </Button>
               </div>

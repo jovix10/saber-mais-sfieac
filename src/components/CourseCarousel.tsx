@@ -7,6 +7,7 @@ const competenceIcons: Record<string, React.ElementType> = {
   Digital: BookOpen,
   Ambiental: Leaf,
   Inclusiva: Users,
+  Compliance: BookOpen,
   Outros: Puzzle,
 };
 
@@ -14,6 +15,7 @@ const competenceColors: Record<string, string> = {
   Digital: 'bg-blue-500/10 text-blue-600',
   Ambiental: 'bg-emerald-500/10 text-emerald-600',
   Inclusiva: 'bg-violet-500/10 text-violet-600',
+  Compliance: 'bg-red-500/10 text-red-600',
   Outros: 'bg-orange-500/10 text-orange-600',
 };
 
@@ -31,7 +33,7 @@ export function CourseCarousel() {
   const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
-    supabase.from("courses").select("*").eq("active", true).then(({ data }) => {
+    supabase.from("courses").select("*").eq("active", true).eq("is_compliance", false).then(({ data }) => {
       if (data) setCourses(data as Course[]);
     });
   }, []);

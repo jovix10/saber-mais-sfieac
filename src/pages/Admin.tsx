@@ -733,6 +733,7 @@ export default function Admin() {
                             <SelectItem value="Digital">Digital</SelectItem>
                             <SelectItem value="Ambiental">Ambiental</SelectItem>
                             <SelectItem value="Inclusiva">Inclusiva</SelectItem>
+                            <SelectItem value="Compliance">Compliance</SelectItem>
                             <SelectItem value="Outros">Outros</SelectItem>
                           </SelectContent>
                         </Select>
@@ -822,6 +823,7 @@ export default function Admin() {
                         <SelectItem value="Digital">Digital</SelectItem>
                         <SelectItem value="Ambiental">Ambiental</SelectItem>
                         <SelectItem value="Inclusiva">Inclusiva</SelectItem>
+                        <SelectItem value="Compliance">Compliance</SelectItem>
                         <SelectItem value="Outros">Outros</SelectItem>
                       </SelectContent>
                     </Select>
