@@ -33,7 +33,7 @@ export function CourseCarousel() {
   const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
-    supabase.from("courses").select("*").eq("active", true).then(({ data }) => {
+    supabase.from("courses").select("*").eq("active", true).eq("is_compliance", false).then(({ data }) => {
       if (data) setCourses(data as Course[]);
     });
   }, []);
