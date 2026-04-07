@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle, KeyRound } from "lucide-react";
+import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle, KeyRound, Trash2, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ export default function Admin() {
   const [showEditHoursDialog, setShowEditHoursDialog] = useState(false);
   const [showSupportDialog, setShowSupportDialog] = useState(false);
   const [showUserDetailDialog, setShowUserDetailDialog] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editHoursUser, setEditHoursUser] = useState<Profile | null>(null);
@@ -51,6 +52,8 @@ export default function Admin() {
   const [resetPwUser, setResetPwUser] = useState<Profile | null>(null);
   const [resetPwValue, setResetPwValue] = useState('');
   const [credentialPopup, setCredentialPopup] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [bulkProgress, setBulkProgress] = useState<{ total: number; status: string } | null>(null);
+  const [clearConfirmText, setClearConfirmText] = useState('');
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
@@ -69,7 +72,6 @@ export default function Admin() {
       (g as any[]).forEach(item => { goalsMap[item.unit] = item.goal_hours; });
       setGoals(goalsMap);
     }
-    // Load support config from localStorage
     const saved = localStorage.getItem('saber_support_config');
     if (saved) setSupportForm(JSON.parse(saved));
   };
@@ -79,31 +81,42 @@ export default function Admin() {
   const isUserAdmin = (userId: string) => roles.some(r => r.user_id === userId && r.role === 'admin');
   const isUserGestor = (userId: string) => roles.some(r => r.user_id === userId && r.role === 'gestor');
 
-  const toggleGestor = async (userId: string) => {
-    if (isUserGestor(userId)) {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "gestor" as any);
-      toast.success("Papel de gestor removido");
+  const getUserRole = (userId: string): string => {
+    if (isUserAdmin(userId)) return 'admin';
+    if (isUserGestor(userId)) return 'gestor';
+    return 'user';
+  };
+
+  const getAuthToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token;
+  };
+
+  const invokeAdminFunction = async (body: any) => {
+    const token = await getAuthToken();
+    if (!token) { toast.error("Sessão expirada"); return null; }
+    const res = await supabase.functions.invoke('admin-create-user', {
+      body,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res;
+  };
+
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    setSubmitting(true);
+    const res = await invokeAdminFunction({ action: 'change_role', user_id: userId, new_role: newRole });
+    if (res?.error || res?.data?.error) {
+      toast.error(res?.data?.error || "Erro ao alterar cargo");
     } else {
-      await supabase.from("user_roles").insert({ user_id: userId, role: "gestor" as any });
-      toast.success("Usuário promovido a gestor");
+      toast.success(`Cargo alterado para ${newRole === 'admin' ? 'Administrador' : newRole === 'gestor' ? 'Gestor' : 'Colaborador'}`);
+      await fetchAll();
     }
-    fetchAll();
+    setSubmitting(false);
   };
 
   const assignManager = async (userId: string, managerId: string | null) => {
     await supabase.from("profiles").update({ manager_id: managerId } as any).eq("id", userId);
     toast.success(managerId ? "Gestor atribuído" : "Gestor removido");
-    fetchAll();
-  };
-
-  const toggleAdmin = async (userId: string) => {
-    if (isUserAdmin(userId)) {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
-      toast.success("Permissão de admin removida");
-    } else {
-      await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-      toast.success("Usuário promovido a admin");
-    }
     fetchAll();
   };
 
@@ -118,7 +131,6 @@ export default function Admin() {
     if (error) { toast.error("Erro ao atualizar certificado"); return; }
     const cert = certs.find(c => c.id === certId);
     if (cert) {
-      // Notify the user
       await supabase.from("notifications").insert({
         user_id: cert.user_id,
         title: status === 'approved' ? '✅ Certificado Aprovado!' : '❌ Certificado Reprovado',
@@ -128,14 +140,10 @@ export default function Admin() {
       if (status === 'approved') {
         const user = profiles.find(p => p.id === cert.user_id);
         if (user) {
-          // Standard achievement
           await supabase.from("achievements").insert({
-            user_id: cert.user_id,
-            user_name: user.name,
-            user_unit: user.unit,
+            user_id: cert.user_id, user_name: user.name, user_unit: user.unit,
             description: `completou "${cert.title}" (${cert.hours}h)`,
           });
-          // Compliance exclusive achievement
           if (cert.competence === 'Compliance') {
             const complianceCerts = certs.filter(c => c.user_id === cert.user_id && c.status === 'approved' && c.competence === 'Compliance').length + 1;
             let complianceBadge = '';
@@ -144,18 +152,8 @@ export default function Admin() {
             else if (complianceCerts === 5) complianceBadge = '🛡️ Mestre do Compliance - Nível 3';
             else if (complianceCerts === 10) complianceBadge = '🛡️ Lenda do Compliance - Nível Máximo';
             if (complianceBadge) {
-              await supabase.from("achievements").insert({
-                user_id: cert.user_id,
-                user_name: user.name,
-                user_unit: user.unit,
-                description: complianceBadge,
-              });
-              await supabase.from("notifications").insert({
-                user_id: cert.user_id,
-                title: '🏆 Conquista Exclusiva de Compliance!',
-                message: `Você desbloqueou: ${complianceBadge}`,
-                type: 'success',
-              });
+              await supabase.from("achievements").insert({ user_id: cert.user_id, user_name: user.name, user_unit: user.unit, description: complianceBadge });
+              await supabase.from("notifications").insert({ user_id: cert.user_id, title: '🏆 Conquista Exclusiva de Compliance!', message: `Você desbloqueou: ${complianceBadge}`, type: 'success' });
             }
           }
         }
@@ -273,30 +271,20 @@ export default function Admin() {
     if (resetPwValue.length < 6) { toast.error("Senha deve ter no mínimo 6 caracteres"); return; }
     setSubmitting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Sessão expirada, faça login novamente");
-        setSubmitting(false);
-        return;
-      }
       const res = await supabase.functions.invoke('reset-password', {
         body: { user_id: resetPwUser.id, new_password: resetPwValue },
       });
-      console.log("Reset password response:", res);
       if (res.error) {
-        const errorMsg = typeof res.error === 'object' && 'message' in res.error 
-          ? (res.error as any).message 
-          : String(res.error);
+        const errorMsg = typeof res.error === 'object' && 'message' in res.error ? (res.error as any).message : String(res.error);
         toast.error(errorMsg || "Erro ao redefinir senha");
       } else if (res.data?.error) {
         toast.error(res.data.error);
       } else {
-        toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso! O usuário precisará trocar a senha no próximo login.`);
+        toast.success(`Senha de ${resetPwUser.name} redefinida com sucesso!`);
         setResetPwUser(null);
         setResetPwValue('');
       }
     } catch (err: any) {
-      console.error("Reset password error:", err);
       toast.error(err?.message || "Erro ao redefinir senha");
     }
     setSubmitting(false);
@@ -307,77 +295,140 @@ export default function Admin() {
     fetchAll();
   };
 
+  // Create user via edge function (doesn't change admin session)
   const handleAddUser = async () => {
     if (!userForm.name || !userForm.email || !userForm.password) return;
     setSubmitting(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: userForm.email, password: userForm.password,
-      options: { data: { name: userForm.name, unit: userForm.unit, area: userForm.area } },
+    const res = await invokeAdminFunction({
+      action: 'create_single',
+      email: userForm.email,
+      password: userForm.password,
+      name: userForm.name,
+      unit: userForm.unit,
+      area: userForm.area,
+      role: userForm.role,
+      manager_id: userForm.manager_id || undefined,
     });
-    if (error) { toast.error(error.message); } else {
-      // Assign role if gestor
-      if (userForm.role === 'gestor' && data.user) {
-        await supabase.from("user_roles").insert({ user_id: data.user.id, role: 'gestor' as any });
-      }
-      // Assign manager
-      if (userForm.manager_id && data.user) {
-        setTimeout(async () => {
-          await supabase.from("profiles").update({ manager_id: userForm.manager_id } as any).eq("id", data.user!.id);
-        }, 2000);
-      }
+    if (res?.error || res?.data?.error) {
+      toast.error(res?.data?.error || "Erro ao cadastrar usuário");
+    } else {
       setCredentialPopup({ name: userForm.name, email: userForm.email, password: userForm.password });
       setUserForm({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
       setShowUserDialog(false);
-      setTimeout(fetchAll, 1500);
+      setTimeout(fetchAll, 1000);
     }
     setSubmitting(false);
   };
 
+  // Bulk upload via edge function
   const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSubmitting(true);
-    const text = await file.text();
-    const lines = text.split('\n').filter(l => l.trim());
-    const header = lines[0].toLowerCase();
-    if (!header.includes('nome') || !header.includes('email') || !header.includes('senha')) {
-      toast.error("Formato inválido. Use: nome;email;senha;unidade;area;cargo;gestor_email");
-      setSubmitting(false); return;
-    }
-    let success = 0, errors = 0;
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(';').map(s => s.trim());
-      if (parts.length < 3) continue;
-      const [name, email, password, unit, area, cargo, gestorEmail] = parts;
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name, unit: unit || 'FIEAC', area: area || '' } } });
-      if (error) { errors++; continue; }
-      if (data.user) {
-        // Assign role if gestor
-        if (cargo?.toLowerCase() === 'gestor') {
-          await supabase.from("user_roles").insert({ user_id: data.user.id, role: 'gestor' as any });
-        }
-        // Assign manager by email
-        if (gestorEmail) {
-          const gestor = profiles.find(p => p.email.toLowerCase() === gestorEmail.toLowerCase());
-          if (gestor) {
-            setTimeout(async () => {
-              await supabase.from("profiles").update({ manager_id: gestor.id } as any).eq("id", data.user!.id);
-            }, 2000);
-          }
+    setBulkProgress({ total: 0, status: 'Lendo arquivo...' });
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(l => l.trim());
+      const header = lines[0].toLowerCase();
+      
+      if (!header.includes('nome') || !header.includes('email') || !header.includes('senha')) {
+        toast.error("Formato inválido. Use: nome;email;senha;unidade;cargo");
+        setSubmitting(false);
+        setBulkProgress(null);
+        return;
+      }
+
+      const headerParts = lines[0].split(';').map(s => s.trim().toLowerCase());
+      const nameIdx = headerParts.indexOf('nome');
+      const emailIdx = headerParts.indexOf('email');
+      const senhaIdx = headerParts.indexOf('senha');
+      const unitIdx = headerParts.indexOf('unidade');
+      const areaIdx = headerParts.indexOf('area');
+      const cargoIdx = headerParts.indexOf('cargo');
+      const gestorIdx = headerParts.indexOf('gestor_email');
+
+      const users: any[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(';').map(s => s.trim());
+        const name = parts[nameIdx] || '';
+        const email = parts[emailIdx] || '';
+        const password = parts[senhaIdx] || '';
+        if (!name || !email || !password) continue;
+        
+        users.push({
+          name,
+          email,
+          password,
+          unit: unitIdx >= 0 ? (parts[unitIdx] || 'FIEAC') : 'FIEAC',
+          area: areaIdx >= 0 ? (parts[areaIdx] || '') : (cargoIdx >= 0 ? (parts[cargoIdx] || '') : ''),
+          role: 'user',
+          manager_email: gestorIdx >= 0 ? (parts[gestorIdx] || '') : '',
+        });
+      }
+
+      if (users.length === 0) {
+        toast.error("Nenhum usuário válido encontrado no arquivo");
+        setSubmitting(false);
+        setBulkProgress(null);
+        return;
+      }
+
+      setBulkProgress({ total: users.length, status: `Cadastrando ${users.length} usuários...` });
+
+      // Send in chunks of 50 to avoid timeout
+      let totalSuccess = 0, totalErrors = 0;
+      const allErrorDetails: string[] = [];
+      const chunkSize = 50;
+
+      for (let i = 0; i < users.length; i += chunkSize) {
+        const chunk = users.slice(i, i + chunkSize);
+        setBulkProgress({ total: users.length, status: `Processando ${i + 1}-${Math.min(i + chunkSize, users.length)} de ${users.length}...` });
+        
+        const res = await invokeAdminFunction({ action: 'bulk_create', users: chunk });
+        if (res?.data) {
+          totalSuccess += res.data.success || 0;
+          totalErrors += res.data.errors || 0;
+          if (res.data.errorDetails) allErrorDetails.push(...res.data.errorDetails);
+        } else {
+          totalErrors += chunk.length;
         }
       }
-      success++;
+
+      if (totalErrors > 0 && allErrorDetails.length > 0) {
+        toast.error(`${totalErrors} erros: ${allErrorDetails.slice(0, 3).join('; ')}`);
+      }
+      toast.success(`${totalSuccess} usuários cadastrados com sucesso!${totalErrors > 0 ? ` (${totalErrors} erros)` : ''}`);
+      setShowBulkDialog(false);
+      setBulkProgress(null);
+      setTimeout(fetchAll, 1000);
+    } catch (err: any) {
+      toast.error("Erro ao processar arquivo: " + (err?.message || ''));
+      setBulkProgress(null);
     }
-    toast.success(`${success} usuários cadastrados. ${errors > 0 ? `${errors} erros.` : ''}`);
-    setShowBulkDialog(false); setSubmitting(false);
-    setTimeout(fetchAll, 2000);
+    setSubmitting(false);
   };
 
   const downloadTemplate = () => {
-    const csv = "nome;email;senha;unidade;area;cargo;gestor_email\nJoão Silva;joao@fieac.org.br;Senha@123;SESI;TI;usuario;\nMaria Santos;maria@fieac.org.br;Senha@456;SENAI;RH;gestor;\nAna Lima;ana@fieac.org.br;Senha@789;SESI;Financeiro;usuario;maria@fieac.org.br";
+    const csv = "nome;email;senha;unidade;cargo;gestor_email\nJoão Silva;joao@fieac.org.br;Senha@123;SESI;Analista;;\nMaria Santos;maria@fieac.org.br;Senha@456;SENAI;Coordenador;;\nAna Lima;ana@fieac.org.br;Senha@789;SESI;Assistente;maria@fieac.org.br";
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'template_usuarios.csv'; a.click();
+  };
+
+  const handleClearAllUsers = async () => {
+    if (clearConfirmText !== 'CONFIRMAR') return;
+    setSubmitting(true);
+    const res = await invokeAdminFunction({ action: 'clear_all' });
+    if (res?.error || res?.data?.error) {
+      toast.error(res?.data?.error || "Erro ao limpar cadastros");
+    } else {
+      toast.success(`${res?.data?.deleted || 0} usuários removidos. Seu acesso foi preservado.`);
+      setShowClearDialog(false);
+      setClearConfirmText('');
+      setTimeout(fetchAll, 1000);
+    }
+    setSubmitting(false);
   };
 
   const handleGoalUpdate = async (unit: string, hours: number) => {
@@ -399,9 +450,9 @@ export default function Admin() {
   };
 
   const exportUsers = () => {
-    const header = "Nome;Email;Unidade;Área;Horas;Admin;Visível no Ranking";
+    const header = "Nome;Email;Unidade;Área;Horas;Cargo;Visível no Ranking";
     const rows = profiles.map(p =>
-      `${p.name};${p.email};${p.unit};${p.area};${Number(p.total_hours)};${isUserAdmin(p.id) ? 'Sim' : 'Não'};${p.visible_in_ranking ? 'Sim' : 'Não'}`
+      `${p.name};${p.email};${p.unit};${p.area};${Number(p.total_hours)};${getUserRole(p.id)};${p.visible_in_ranking ? 'Sim' : 'Não'}`
     );
     const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -447,7 +498,7 @@ export default function Admin() {
             <h2 className="font-heading font-bold text-2xl text-foreground">Painel Administrativo</h2>
             <p className="text-muted-foreground text-sm">Gerencie colaboradores, certificados, cursos e metas</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
               <DialogTrigger asChild>
                 <Button className="gap-2"><Plus className="h-4 w-4" /> Novo Usuário</Button>
@@ -481,8 +532,8 @@ export default function Admin() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Área</Label>
-                      <Input value={userForm.area} onChange={e => setUserForm({ ...userForm, area: e.target.value })} placeholder="Ex: TI" />
+                      <Label>Área / Cargo</Label>
+                      <Input value={userForm.area} onChange={e => setUserForm({ ...userForm, area: e.target.value })} placeholder="Ex: Analista de TI" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -521,10 +572,10 @@ export default function Admin() {
                 <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores.</DialogDescription></DialogHeader>
+                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores. Suporta até 1000+ usuários.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Envie um arquivo CSV com o formato: <code className="bg-muted px-1 rounded">nome;email;senha;unidade;area</code>
+                    Formato: <code className="bg-muted px-1 rounded">nome;email;senha;unidade;cargo</code>
                   </p>
                   <Button variant="outline" className="gap-2 w-full" onClick={downloadTemplate}>
                     <Download className="h-4 w-4" /> Baixar Template
@@ -533,10 +584,19 @@ export default function Admin() {
                     <Label>Arquivo CSV</Label>
                     <Input type="file" accept=".csv" onChange={handleBulkUpload} disabled={submitting} />
                   </div>
-                  {submitting && <p className="text-sm text-muted-foreground text-center">Processando...</p>}
+                  {bulkProgress && (
+                    <div className="p-3 rounded-xl bg-muted/50 text-center">
+                      <p className="text-sm font-medium text-foreground">{bulkProgress.status}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{bulkProgress.total} usuários no arquivo</p>
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Button variant="destructive" className="gap-2" onClick={() => setShowClearDialog(true)}>
+              <Trash2 className="h-4 w-4" /> Limpar Cadastros
+            </Button>
           </div>
         </div>
 
@@ -564,7 +624,7 @@ export default function Admin() {
         {tab === 'overview' && (
           <div className="glass-card rounded-2xl p-6">
             <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5" /> Colaboradores
+              <Users className="h-5 w-5" /> Colaboradores ({profiles.length})
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -573,67 +633,64 @@ export default function Admin() {
                     <th className="text-left py-2 font-medium text-muted-foreground">Nome</th>
                     <th className="text-left py-2 font-medium text-muted-foreground hidden md:table-cell">E-mail</th>
                     <th className="text-left py-2 font-medium text-muted-foreground">Unidade</th>
+                    <th className="text-left py-2 font-medium text-muted-foreground">Cargo</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Horas</th>
                     <th className="text-center py-2 font-medium text-muted-foreground">Ranking</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {profiles.map(user => (
-                    <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="py-3">
-                        <div className="flex items-center gap-2">
-                          {user.avatar_url ? (
-                            <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
-                          ) : (
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <span className="text-xs font-bold text-primary">{user.name.charAt(0)}</span>
-                            </div>
-                          )}
-                          <span className="font-medium text-foreground">{user.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 text-muted-foreground hidden md:table-cell">{user.email}</td>
-                      <td className="py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${user.unit.toLowerCase()}`}>{user.unit}</span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <button
-                          onClick={() => { setEditHoursUser(user); setEditHoursValue(String(Number(user.total_hours))); setShowEditHoursDialog(true); }}
-                          className="font-heading font-semibold text-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
-                          title="Editar horas"
-                        >
-                          {Number(user.total_hours)}h
-                          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100" />
-                        </button>
-                      </td>
-                      <td className="py-3 text-center">
-                        <button
-                          onClick={() => toggleRanking(user.id, user.visible_in_ranking)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${user.visible_in_ranking ? 'bg-primary' : 'bg-muted'}`}
-                        >
-                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${user.visible_in_ranking ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                      </td>
-                      <td className="py-3 text-right">
-                        <div className="flex items-center gap-1 justify-end">
+                  {profiles.map(user => {
+                    const role = getUserRole(user.id);
+                    return (
+                      <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                            ) : (
+                              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <span className="text-xs font-bold text-primary">{user.name.charAt(0)}</span>
+                              </div>
+                            )}
+                            <span className="font-medium text-foreground">{user.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-muted-foreground hidden md:table-cell">{user.email}</td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${user.unit.toLowerCase()}`}>{user.unit}</span>
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${role === 'admin' ? 'bg-red-500/10 text-red-600' : role === 'gestor' ? 'bg-violet-500/10 text-violet-600' : 'bg-muted text-muted-foreground'}`}>
+                            {role === 'admin' ? 'Admin' : role === 'gestor' ? 'Gestor' : 'Colaborador'}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          <button
+                            onClick={() => { setEditHoursUser(user); setEditHoursValue(String(Number(user.total_hours))); setShowEditHoursDialog(true); }}
+                            className="font-heading font-semibold text-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
+                            title="Editar horas"
+                          >
+                            {Number(user.total_hours)}h
+                            <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+                          </button>
+                        </td>
+                        <td className="py-3 text-center">
+                          <button
+                            onClick={() => toggleRanking(user.id, user.visible_in_ranking)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${user.visible_in_ranking ? 'bg-primary' : 'bg-muted'}`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${user.visible_in_ranking ? 'translate-x-6' : 'translate-x-1'}`} />
+                          </button>
+                        </td>
+                        <td className="py-3 text-right">
                           <Button size="sm" variant="ghost" onClick={() => handleImpersonate(user.id)} title="Ver dados do usuário" className="h-8 w-8 p-0">
                             <UserCheck className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant={isUserAdmin(user.id) ? "default" : "outline"}
-                            onClick={() => toggleAdmin(user.id)}
-                            className="gap-1 h-8"
-                            title={isUserAdmin(user.id) ? 'Remover admin' : 'Tornar admin'}
-                          >
-                            <Shield className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">{isUserAdmin(user.id) ? 'Admin' : 'Admin'}</span>
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -645,7 +702,7 @@ export default function Admin() {
           <DialogContent>
             <DialogHeader><DialogTitle>Editar Horas - {editHoursUser?.name}</DialogTitle><DialogDescription>Ajuste o total de horas do colaborador.</DialogDescription></DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Ajuste o total de horas do colaborador. Atual: {editHoursUser ? Number(editHoursUser.total_hours) : 0}h</p>
+              <p className="text-sm text-muted-foreground">Atual: {editHoursUser ? Number(editHoursUser.total_hours) : 0}h</p>
               <div className="space-y-2">
                 <Label>Novo total de horas</Label>
                 <Input type="number" value={editHoursValue} onChange={e => setEditHoursValue(e.target.value)} min={0} step={0.5} />
@@ -780,7 +837,7 @@ export default function Admin() {
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{course.title}</p>
-                      <p className="text-xs text-muted-foreground">{course.provider} · {course.hours}h · {course.competence}</p>
+                      <p className="text-xs text-muted-foreground">{course.provider} · {course.hours}h · {course.competence} {course.is_compliance && '· 🛡️ Compliance'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -867,7 +924,7 @@ export default function Admin() {
               <Target className="h-5 w-5" /> Metas por Unidade
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Defina as metas de horas de capacitação. As horas são contabilizadas apenas após a validação do certificado.
+              Defina as metas de horas de capacitação.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {['SENAI', 'SESI', 'FIEAC', 'IEL'].map(unit => (
@@ -877,21 +934,12 @@ export default function Admin() {
                     <span className="text-sm font-medium text-foreground">Meta de Horas</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Input
-                      type="number"
-                      value={goals[unit] ?? 20}
-                      onChange={e => setGoals(prev => ({ ...prev, [unit]: parseInt(e.target.value) || 0 }))}
-                      className="w-24"
-                      min={1}
-                    />
+                    <Input type="number" value={goals[unit] ?? 20} onChange={e => setGoals(prev => ({ ...prev, [unit]: parseInt(e.target.value) || 0 }))} className="w-24" min={1} />
                     <span className="text-sm text-muted-foreground">horas</span>
-                    <Button size="sm" onClick={() => handleGoalUpdate(unit, goals[unit] ?? 20)}>
-                      Salvar
-                    </Button>
+                    <Button size="sm" onClick={() => handleGoalUpdate(unit, goals[unit] ?? 20)}>Salvar</Button>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {profiles.filter(p => p.unit === unit).length} colaboradores ·{' '}
-                    {profiles.filter(p => p.unit === unit && Number(p.total_hours) >= (goals[unit] ?? 20)).length} atingiram a meta
+                    {profiles.filter(p => p.unit === unit).length} colaboradores · {profiles.filter(p => p.unit === unit && Number(p.total_hours) >= (goals[unit] ?? 20)).length} atingiram a meta
                   </div>
                 </div>
               ))}
@@ -911,7 +959,6 @@ export default function Admin() {
                   <Download className="h-4 w-4" /> Exportar Base de Usuários (CSV)
                 </Button>
               </div>
-
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 {['SESI', 'SENAI', 'FIEAC', 'IEL'].map(unit => {
                   const unitUsers = profiles.filter(p => p.unit === unit);
@@ -929,7 +976,6 @@ export default function Admin() {
                   );
                 })}
               </div>
-
               <h4 className="font-heading font-semibold text-foreground mb-3">📊 Cursos Mais Realizados</h4>
               <div className="space-y-2">
                 {coursePopularity.length === 0 && <p className="text-sm text-muted-foreground">Nenhum curso cadastrado</p>}
@@ -961,21 +1007,18 @@ export default function Admin() {
             <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
               <HelpCircle className="h-5 w-5" /> Configurações de Suporte
             </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Configure as informações exibidas no botão de suporte para todos os usuários.
-            </p>
             <div className="space-y-4 max-w-lg">
               <div className="space-y-2">
                 <Label>E-mail de Suporte</Label>
-                <Input value={supportForm.email} onChange={e => setSupportForm({ ...supportForm, email: e.target.value })} placeholder="suporte@fieac.org.br" />
+                <Input value={supportForm.email} onChange={e => setSupportForm({ ...supportForm, email: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Telefone de Suporte</Label>
-                <Input value={supportForm.phone} onChange={e => setSupportForm({ ...supportForm, phone: e.target.value })} placeholder="(68) 3212-4200" />
+                <Input value={supportForm.phone} onChange={e => setSupportForm({ ...supportForm, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Mensagem</Label>
-                <Textarea value={supportForm.message} onChange={e => setSupportForm({ ...supportForm, message: e.target.value })} rows={3} placeholder="Mensagem exibida no suporte" />
+                <Textarea value={supportForm.message} onChange={e => setSupportForm({ ...supportForm, message: e.target.value })} rows={3} />
               </div>
               <Button onClick={handleSaveSupportConfig} className="gap-2">
                 <Save className="h-4 w-4" /> Salvar Configurações
@@ -993,6 +1036,7 @@ export default function Admin() {
               const approved = userCerts.filter(c => c.status === 'approved').length;
               const pending = userCerts.filter(c => c.status === 'pending').length;
               const rejected = userCerts.filter(c => c.status === 'rejected').length;
+              const currentRole = getUserRole(selectedUser.id);
               return (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -1033,26 +1077,29 @@ export default function Admin() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Button onClick={() => handleLoginAsUser(selectedUser.id)} disabled={submitting} className="w-full gap-2">
-                      <UserCheck className="h-4 w-4" /> {submitting ? 'Acessando...' : 'Entrar na Conta do Usuário'}
-                    </Button>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" onClick={() => { setEditHoursUser(selectedUser); setEditHoursValue(String(Number(selectedUser.total_hours))); setShowEditHoursDialog(true); }} className="gap-1">
-                        <Pencil className="h-3.5 w-3.5" /> Editar Horas
-                      </Button>
-                      <Button variant={isUserAdmin(selectedUser.id) ? "default" : "outline"} onClick={() => toggleAdmin(selectedUser.id)} className="gap-1">
-                        <Shield className="h-3.5 w-3.5" /> {isUserAdmin(selectedUser.id) ? 'Remover Admin' : 'Tornar Admin'}
-                      </Button>
+                    {/* Role Change */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-muted-foreground">Cargo / Tipo de Acesso</Label>
+                      <Select value={currentRole} onValueChange={v => handleChangeRole(selectedUser.id, v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Colaborador</SelectItem>
+                          <SelectItem value="gestor">Gestor</SelectItem>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant={isUserGestor(selectedUser.id) ? "default" : "outline"} onClick={() => toggleGestor(selectedUser.id)} className="gap-1">
-                        <Users className="h-3.5 w-3.5" /> {isUserGestor(selectedUser.id) ? 'Remover Gestor' : 'Tornar Gestor'}
-                      </Button>
+
+                    {/* Manager Assignment */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-muted-foreground">Gestor Responsável</Label>
                       <Select
                         value={selectedUser.manager_id || '__none__'}
                         onValueChange={v => assignManager(selectedUser.id, v === '__none__' ? null : v)}
                       >
-                        <SelectTrigger className="h-9 text-xs">
+                        <SelectTrigger>
                           <SelectValue placeholder="Atribuir Gestor" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1063,9 +1110,18 @@ export default function Admin() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button variant="outline" onClick={() => { setResetPwUser(selectedUser); setResetPwValue(''); }} className="w-full gap-1">
-                      <KeyRound className="h-3.5 w-3.5" /> Redefinir Senha
+
+                    <Button onClick={() => handleLoginAsUser(selectedUser.id)} disabled={submitting} className="w-full gap-2">
+                      <UserCheck className="h-4 w-4" /> {submitting ? 'Acessando...' : 'Entrar na Conta do Usuário'}
                     </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" onClick={() => { setEditHoursUser(selectedUser); setEditHoursValue(String(Number(selectedUser.total_hours))); setShowEditHoursDialog(true); }} className="gap-1">
+                        <Pencil className="h-3.5 w-3.5" /> Editar Horas
+                      </Button>
+                      <Button variant="outline" onClick={() => { setResetPwUser(selectedUser); setResetPwValue(''); }} className="gap-1">
+                        <KeyRound className="h-3.5 w-3.5" /> Redefinir Senha
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1093,6 +1149,7 @@ export default function Admin() {
             )}
           </DialogContent>
         </Dialog>
+
         {/* Credential Popup */}
         <Dialog open={!!credentialPopup} onOpenChange={() => setCredentialPopup(null)}>
           <DialogContent className="max-w-md">
@@ -1120,6 +1177,38 @@ export default function Admin() {
                 </Button>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Clear All Users Dialog */}
+        <Dialog open={showClearDialog} onOpenChange={v => { setShowClearDialog(v); setClearConfirmText(''); }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" /> Limpar Todos os Cadastros
+              </DialogTitle>
+              <DialogDescription>
+                Esta ação é irreversível. Todos os usuários serão removidos, exceto o acesso principal (joao.ferreira@fieac.org.br).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Para confirmar, digite <strong>CONFIRMAR</strong> abaixo:
+              </p>
+              <Input
+                value={clearConfirmText}
+                onChange={e => setClearConfirmText(e.target.value)}
+                placeholder="Digite CONFIRMAR"
+              />
+              <Button
+                variant="destructive"
+                onClick={handleClearAllUsers}
+                disabled={submitting || clearConfirmText !== 'CONFIRMAR'}
+                className="w-full gap-2"
+              >
+                <Trash2 className="h-4 w-4" /> {submitting ? 'Removendo...' : 'Confirmar Exclusão'}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
