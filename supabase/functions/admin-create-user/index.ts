@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
         }
       });
 
-      let success = 0, errors = 0;
+      let success = 0, errors = 0, skipped = 0;
       const errorDetails: string[] = [];
 
       // Process sequentially in small batches to avoid rate limits
@@ -91,6 +91,12 @@ Deno.serve(async (req) => {
           if (!u.email || !u.name || !u.password) {
             errors++;
             errorDetails.push(`Linha ${i + 1}: dados incompletos`);
+            continue;
+          }
+
+          // Skip already registered emails
+          if (existingEmails.has(u.email.toLowerCase().trim())) {
+            skipped++;
             continue;
           }
 
