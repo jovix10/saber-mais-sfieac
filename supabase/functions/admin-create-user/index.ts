@@ -69,14 +69,19 @@ Deno.serve(async (req) => {
       const { users } = body as { users: Array<{ name: string; email: string; password: string; unit?: string; area?: string; role?: string; manager_email?: string }> };
       if (!users?.length) return jsonResponse({ error: "Lista vazia" }, 400);
 
-      // Get existing profiles for manager mapping
+      // Get existing profiles for manager mapping AND duplicate detection
       const { data: existingProfiles } = await adminClient.from("profiles").select("id, email");
       const emailToId = new Map<string, string>();
+      const existingEmails = new Set<string>();
       existingProfiles?.forEach((p: any) => {
-        if (p.email) emailToId.set(p.email.toLowerCase(), p.id);
+        if (p.email) {
+          const lower = p.email.toLowerCase().trim();
+          emailToId.set(lower, p.id);
+          existingEmails.add(lower);
+        }
       });
 
-      let success = 0, errors = 0;
+      let success = 0, errors = 0, skipped = 0;
       const errorDetails: string[] = [];
 
       // Process sequentially in small batches to avoid rate limits
@@ -86,6 +91,12 @@ Deno.serve(async (req) => {
           if (!u.email || !u.name || !u.password) {
             errors++;
             errorDetails.push(`Linha ${i + 1}: dados incompletos`);
+            continue;
+          }
+
+          // Skip already registered emails
+          if (existingEmails.has(u.email.toLowerCase().trim())) {
+            skipped++;
             continue;
           }
 
@@ -123,7 +134,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return jsonResponse({ success, errors, errorDetails: errorDetails.slice(0, 30) });
+      return jsonResponse({ success, errors, skipped, errorDetails: errorDetails.slice(0, 30) });
     }
 
     if (action === "clear_all") {
