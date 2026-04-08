@@ -320,37 +320,39 @@ export default function Admin() {
     setSubmitting(false);
   };
 
-  // Bulk upload via edge function
-  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkUsers, setBulkUsers] = useState<any[]>([]);
+
+  const handleBulkFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setSubmitting(true);
-    setBulkProgress({ total: 0, status: 'Lendo arquivo...' });
-
+    setBulkFile(file);
+    
     try {
       const text = await file.text();
-      const lines = text.split('\n').filter(l => l.trim());
-      const header = lines[0].toLowerCase();
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { toast.error("Arquivo vazio ou sem dados"); setBulkUsers([]); return; }
       
-      if (!header.includes('nome') || !header.includes('email') || !header.includes('senha')) {
-        toast.error("Formato inválido. Use: nome;email;senha;unidade;cargo");
-        setSubmitting(false);
-        setBulkProgress(null);
+      // Detect separator
+      const sep = lines[0].includes(';') ? ';' : ',';
+      const headerParts = lines[0].split(sep).map(s => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+      
+      const nameIdx = headerParts.findIndex(h => h.includes('nome'));
+      const emailIdx = headerParts.findIndex(h => h.includes('email') && !h.includes('gestor'));
+      const senhaIdx = headerParts.findIndex(h => h.includes('senha'));
+      const unitIdx = headerParts.findIndex(h => h.includes('unidade'));
+      const areaIdx = headerParts.findIndex(h => h.includes('area') || h.includes('cargo'));
+      const gestorIdx = headerParts.findIndex(h => h.includes('gestor'));
+
+      if (nameIdx < 0 || emailIdx < 0 || senhaIdx < 0) {
+        toast.error("Cabeçalho inválido. Precisa ter: nome, email, senha");
+        setBulkUsers([]);
         return;
       }
 
-      const headerParts = lines[0].split(';').map(s => s.trim().toLowerCase());
-      const nameIdx = headerParts.indexOf('nome');
-      const emailIdx = headerParts.indexOf('email');
-      const senhaIdx = headerParts.indexOf('senha');
-      const unitIdx = headerParts.indexOf('unidade');
-      const areaIdx = headerParts.indexOf('area');
-      const cargoIdx = headerParts.indexOf('cargo');
-      const gestorIdx = headerParts.indexOf('gestor_email');
-
       const users: any[] = [];
       for (let i = 1; i < lines.length; i++) {
-        const parts = lines[i].split(';').map(s => s.trim());
+        const parts = lines[i].split(sep).map(s => s.trim());
         const name = parts[nameIdx] || '';
         const email = parts[emailIdx] || '';
         const password = parts[senhaIdx] || '';
@@ -361,37 +363,43 @@ export default function Admin() {
           email,
           password,
           unit: unitIdx >= 0 ? (parts[unitIdx] || 'FIEAC') : 'FIEAC',
-          area: areaIdx >= 0 ? (parts[areaIdx] || '') : (cargoIdx >= 0 ? (parts[cargoIdx] || '') : ''),
+          area: areaIdx >= 0 ? (parts[areaIdx] || '') : '',
           role: 'user',
           manager_email: gestorIdx >= 0 ? (parts[gestorIdx] || '') : '',
         });
       }
 
-      if (users.length === 0) {
-        toast.error("Nenhum usuário válido encontrado no arquivo");
-        setSubmitting(false);
-        setBulkProgress(null);
-        return;
-      }
+      setBulkUsers(users);
+      if (users.length === 0) toast.error("Nenhum usuário válido encontrado");
+      else toast.success(`${users.length} usuários encontrados no arquivo`);
+    } catch (err: any) {
+      toast.error("Erro ao ler arquivo: " + (err?.message || ''));
+      setBulkUsers([]);
+    }
+  };
 
-      setBulkProgress({ total: users.length, status: `Cadastrando ${users.length} usuários...` });
+  const handleBulkUpload = async () => {
+    if (bulkUsers.length === 0) { toast.error("Nenhum usuário para cadastrar"); return; }
+    setSubmitting(true);
+    setBulkProgress({ total: bulkUsers.length, status: `Cadastrando ${bulkUsers.length} usuários...` });
 
-      // Send in chunks of 50 to avoid timeout
+    try {
       let totalSuccess = 0, totalErrors = 0;
       const allErrorDetails: string[] = [];
-      const chunkSize = 50;
+      const chunkSize = 25; // smaller chunks for reliability
 
-      for (let i = 0; i < users.length; i += chunkSize) {
-        const chunk = users.slice(i, i + chunkSize);
-        setBulkProgress({ total: users.length, status: `Processando ${i + 1}-${Math.min(i + chunkSize, users.length)} de ${users.length}...` });
+      for (let i = 0; i < bulkUsers.length; i += chunkSize) {
+        const chunk = bulkUsers.slice(i, i + chunkSize);
+        setBulkProgress({ total: bulkUsers.length, status: `Processando ${i + 1}-${Math.min(i + chunkSize, bulkUsers.length)} de ${bulkUsers.length}...` });
         
         const res = await invokeAdminFunction({ action: 'bulk_create', users: chunk });
-        if (res?.data) {
+        if (res?.data && !res?.data?.error) {
           totalSuccess += res.data.success || 0;
           totalErrors += res.data.errors || 0;
           if (res.data.errorDetails) allErrorDetails.push(...res.data.errorDetails);
         } else {
           totalErrors += chunk.length;
+          allErrorDetails.push(res?.data?.error || 'Erro no lote');
         }
       }
 
@@ -401,9 +409,11 @@ export default function Admin() {
       toast.success(`${totalSuccess} usuários cadastrados com sucesso!${totalErrors > 0 ? ` (${totalErrors} erros)` : ''}`);
       setShowBulkDialog(false);
       setBulkProgress(null);
-      setTimeout(fetchAll, 1000);
+      setBulkFile(null);
+      setBulkUsers([]);
+      setTimeout(fetchAll, 1500);
     } catch (err: any) {
-      toast.error("Erro ao processar arquivo: " + (err?.message || ''));
+      toast.error("Erro ao processar: " + (err?.message || ''));
       setBulkProgress(null);
     }
     setSubmitting(false);
@@ -567,12 +577,12 @@ export default function Admin() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+            <Dialog open={showBulkDialog} onOpenChange={v => { setShowBulkDialog(v); if (!v) { setBulkFile(null); setBulkUsers([]); setBulkProgress(null); } }}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores. Suporta até 1000+ usuários.</DialogDescription></DialogHeader>
+                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores. Suporta 500+ usuários.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
                     Formato: <code className="bg-muted px-1 rounded">nome;email;senha;unidade;cargo</code>
@@ -582,12 +592,20 @@ export default function Admin() {
                   </Button>
                   <div className="space-y-2">
                     <Label>Arquivo CSV</Label>
-                    <Input type="file" accept=".csv" onChange={handleBulkUpload} disabled={submitting} />
+                    <Input type="file" accept=".csv,.txt" onChange={handleBulkFileSelect} disabled={submitting} />
                   </div>
+                  {bulkUsers.length > 0 && !bulkProgress && (
+                    <div className="p-3 rounded-xl bg-emerald-500/10 text-center space-y-2">
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✅ {bulkUsers.length} usuários prontos para cadastrar</p>
+                      <Button onClick={handleBulkUpload} disabled={submitting} className="w-full gap-2">
+                        <Upload className="h-4 w-4" /> Cadastrar Todos ({bulkUsers.length})
+                      </Button>
+                    </div>
+                  )}
                   {bulkProgress && (
                     <div className="p-3 rounded-xl bg-muted/50 text-center">
                       <p className="text-sm font-medium text-foreground">{bulkProgress.status}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{bulkProgress.total} usuários no arquivo</p>
+                      <p className="text-xs text-muted-foreground mt-1">{bulkProgress.total} usuários no total</p>
                     </div>
                   )}
                 </div>
