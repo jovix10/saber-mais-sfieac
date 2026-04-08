@@ -384,9 +384,9 @@ export default function Admin() {
     setBulkProgress({ total: bulkUsers.length, status: `Cadastrando ${bulkUsers.length} usuários...` });
 
     try {
-      let totalSuccess = 0, totalErrors = 0;
+      let totalSuccess = 0, totalErrors = 0, totalSkipped = 0;
       const allErrorDetails: string[] = [];
-      const chunkSize = 25; // smaller chunks for reliability
+      const chunkSize = 25;
 
       for (let i = 0; i < bulkUsers.length; i += chunkSize) {
         const chunk = bulkUsers.slice(i, i + chunkSize);
@@ -396,6 +396,7 @@ export default function Admin() {
         if (res?.data && !res?.data?.error) {
           totalSuccess += res.data.success || 0;
           totalErrors += res.data.errors || 0;
+          totalSkipped += res.data.skipped || 0;
           if (res.data.errorDetails) allErrorDetails.push(...res.data.errorDetails);
         } else {
           totalErrors += chunk.length;
@@ -406,7 +407,10 @@ export default function Admin() {
       if (totalErrors > 0 && allErrorDetails.length > 0) {
         toast.error(`${totalErrors} erros: ${allErrorDetails.slice(0, 3).join('; ')}`);
       }
-      toast.success(`${totalSuccess} usuários cadastrados com sucesso!${totalErrors > 0 ? ` (${totalErrors} erros)` : ''}`);
+      const parts = [`${totalSuccess} cadastrados`];
+      if (totalSkipped > 0) parts.push(`${totalSkipped} já existiam`);
+      if (totalErrors > 0) parts.push(`${totalErrors} erros`);
+      toast.success(parts.join(' · '));
       setShowBulkDialog(false);
       setBulkProgress(null);
       setBulkFile(null);
