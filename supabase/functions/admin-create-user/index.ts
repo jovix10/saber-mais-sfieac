@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return jsonResponse({ success, errors, errorDetails: errorDetails.slice(0, 30) });
+      return jsonResponse({ success, errors, skipped, errorDetails: errorDetails.slice(0, 30) });
     }
 
     if (action === "clear_all") {
