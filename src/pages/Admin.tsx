@@ -577,12 +577,12 @@ export default function Admin() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+            <Dialog open={showBulkDialog} onOpenChange={v => { setShowBulkDialog(v); if (!v) { setBulkFile(null); setBulkUsers([]); setBulkProgress(null); } }}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores. Suporta até 1000+ usuários.</DialogDescription></DialogHeader>
+                <DialogHeader><DialogTitle>Importar Usuários em Massa</DialogTitle><DialogDescription>Envie um CSV com os dados dos colaboradores. Suporta 500+ usuários.</DialogDescription></DialogHeader>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
                     Formato: <code className="bg-muted px-1 rounded">nome;email;senha;unidade;cargo</code>
@@ -592,12 +592,20 @@ export default function Admin() {
                   </Button>
                   <div className="space-y-2">
                     <Label>Arquivo CSV</Label>
-                    <Input type="file" accept=".csv" onChange={handleBulkUpload} disabled={submitting} />
+                    <Input type="file" accept=".csv,.txt" onChange={handleBulkFileSelect} disabled={submitting} />
                   </div>
+                  {bulkUsers.length > 0 && !bulkProgress && (
+                    <div className="p-3 rounded-xl bg-emerald-500/10 text-center space-y-2">
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✅ {bulkUsers.length} usuários prontos para cadastrar</p>
+                      <Button onClick={handleBulkUpload} disabled={submitting} className="w-full gap-2">
+                        <Upload className="h-4 w-4" /> Cadastrar Todos ({bulkUsers.length})
+                      </Button>
+                    </div>
+                  )}
                   {bulkProgress && (
                     <div className="p-3 rounded-xl bg-muted/50 text-center">
                       <p className="text-sm font-medium text-foreground">{bulkProgress.status}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{bulkProgress.total} usuários no arquivo</p>
+                      <p className="text-xs text-muted-foreground mt-1">{bulkProgress.total} usuários no total</p>
                     </div>
                   )}
                 </div>
