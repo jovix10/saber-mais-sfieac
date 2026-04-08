@@ -1047,8 +1047,8 @@ export default function Admin() {
 
         {/* User Detail Dialog */}
         <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle><DialogDescription>Informações e ações do colaborador.</DialogDescription></DialogHeader>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Detalhes do Colaborador</DialogTitle><DialogDescription>Edite informações e gerencie o colaborador.</DialogDescription></DialogHeader>
             {selectedUser && (() => {
               const userCerts = certs.filter(c => c.user_id === selectedUser.id);
               const approved = userCerts.filter(c => c.status === 'approved').length;
@@ -1065,14 +1065,47 @@ export default function Admin() {
                         <span className="font-heading font-bold text-xl text-primary">{selectedUser.name.charAt(0)}</span>
                       </div>
                     )}
-                    <div>
-                      <p className="font-heading font-bold text-lg text-foreground">{selectedUser.name}</p>
+                    <div className="flex-1">
                       <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium unit-badge-${selectedUser.unit.toLowerCase()}`}>{selectedUser.unit}</span>
-                        {selectedUser.area && <span className="text-xs text-muted-foreground">{selectedUser.area}</span>}
+                    </div>
+                  </div>
+
+                  {/* Editable Profile Fields */}
+                  <div className="space-y-3 p-3 rounded-xl bg-muted/30 border">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Editar Perfil</p>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Nome</Label>
+                      <Input value={selectedUser.name} onChange={e => setSelectedUser({ ...selectedUser, name: e.target.value })} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Unidade</Label>
+                        <Select value={selectedUser.unit} onValueChange={v => setSelectedUser({ ...selectedUser, unit: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FIEAC">FIEAC</SelectItem>
+                            <SelectItem value="SESI">SESI</SelectItem>
+                            <SelectItem value="SENAI">SENAI</SelectItem>
+                            <SelectItem value="IEL">IEL</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Área / Cargo</Label>
+                        <Input value={selectedUser.area} onChange={e => setSelectedUser({ ...selectedUser, area: e.target.value })} />
                       </div>
                     </div>
+                    <Button size="sm" onClick={async () => {
+                      const { error } = await supabase.from("profiles").update({
+                        name: selectedUser.name,
+                        unit: selectedUser.unit,
+                        area: selectedUser.area,
+                      } as any).eq("id", selectedUser.id);
+                      if (error) toast.error("Erro ao salvar");
+                      else { toast.success("Perfil atualizado!"); fetchAll(); }
+                    }} disabled={submitting} className="w-full gap-2">
+                      <Save className="h-3.5 w-3.5" /> Salvar Perfil
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1082,7 +1115,7 @@ export default function Admin() {
                     </div>
                     <div className="rounded-xl bg-muted/50 p-3 text-center">
                       <p className="font-heading font-bold text-xl text-foreground">{approved}</p>
-                      <p className="text-xs text-muted-foreground">Certificados Aprovados</p>
+                      <p className="text-xs text-muted-foreground">Aprovados</p>
                     </div>
                     <div className="rounded-xl bg-muted/50 p-3 text-center">
                       <p className="font-heading font-bold text-xl text-amber-600">{pending}</p>
@@ -1095,13 +1128,10 @@ export default function Admin() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    {/* Role Change */}
                     <div className="space-y-2">
                       <Label className="text-xs font-medium text-muted-foreground">Cargo / Tipo de Acesso</Label>
                       <Select value={currentRole} onValueChange={v => handleChangeRole(selectedUser.id, v)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="user">Colaborador</SelectItem>
                           <SelectItem value="gestor">Gestor</SelectItem>
@@ -1110,16 +1140,13 @@ export default function Admin() {
                       </Select>
                     </div>
 
-                    {/* Manager Assignment */}
                     <div className="space-y-2">
                       <Label className="text-xs font-medium text-muted-foreground">Gestor Responsável</Label>
                       <Select
                         value={selectedUser.manager_id || '__none__'}
                         onValueChange={v => assignManager(selectedUser.id, v === '__none__' ? null : v)}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Atribuir Gestor" />
-                        </SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Atribuir Gestor" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">Sem gestor</SelectItem>
                           {profiles.filter(p => isUserGestor(p.id) || isUserAdmin(p.id)).map(p => (

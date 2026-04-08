@@ -69,11 +69,16 @@ Deno.serve(async (req) => {
       const { users } = body as { users: Array<{ name: string; email: string; password: string; unit?: string; area?: string; role?: string; manager_email?: string }> };
       if (!users?.length) return jsonResponse({ error: "Lista vazia" }, 400);
 
-      // Get existing profiles for manager mapping
+      // Get existing profiles for manager mapping AND duplicate detection
       const { data: existingProfiles } = await adminClient.from("profiles").select("id, email");
       const emailToId = new Map<string, string>();
+      const existingEmails = new Set<string>();
       existingProfiles?.forEach((p: any) => {
-        if (p.email) emailToId.set(p.email.toLowerCase(), p.id);
+        if (p.email) {
+          const lower = p.email.toLowerCase().trim();
+          emailToId.set(lower, p.id);
+          existingEmails.add(lower);
+        }
       });
 
       let success = 0, errors = 0;
