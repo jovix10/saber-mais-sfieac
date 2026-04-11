@@ -63,8 +63,10 @@ export function CourseCarousel() {
 
   if (courses.length === 0) {
     return (
-      <div>
-        <h3 className="font-heading font-bold text-lg text-foreground mb-4">🔥 Cursos em Alta</h3>
+      <div id="cursos-em-alta">
+        <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+          <Flame className="h-5 w-5 text-orange-500" /> Cursos em Alta
+        </h3>
         <p className="text-sm text-muted-foreground">Nenhum curso disponível no momento</p>
       </div>
     );

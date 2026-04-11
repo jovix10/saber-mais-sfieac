@@ -81,11 +81,16 @@
 
 @layer components {
   .glass-card {
-    background: linear-gradient(145deg, hsl(0 0% 100% / 0.85), hsl(0 0% 100% / 0.65));
+    background: linear-gradient(145deg, hsl(0 0% 100% / 0.9), hsl(0 0% 100% / 0.7));
     @apply backdrop-blur-2xl border border-white/40 shadow-sm rounded-2xl;
+    box-shadow: 0 4px 24px -4px hsl(220 60% 22% / 0.06), 0 1px 3px hsl(220 60% 22% / 0.04);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .glass-card:hover {
+    box-shadow: 0 8px 32px -4px hsl(220 60% 22% / 0.1), 0 2px 8px hsl(220 60% 22% / 0.06);
   }
   .glass-card-dark {
-    background: linear-gradient(145deg, hsl(220 62% 20% / 0.92), hsl(222 55% 28% / 0.88));
+    background: linear-gradient(145deg, hsl(220 62% 20% / 0.95), hsl(222 55% 28% / 0.9));
     @apply backdrop-blur-2xl border border-white/10 shadow-xl text-white rounded-2xl;
   }
   .unit-badge-sesi {
