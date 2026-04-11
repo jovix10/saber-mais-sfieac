@@ -50,6 +50,8 @@ export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps
   };
 
   const progressColor = unitColorMap[unit] || 'hsl(var(--primary))';
+  const progressGradient = `linear-gradient(90deg, ${progressColor}, ${progressColor}dd, ${progressColor}bb)`;
+  const glowShadow = `0 0 20px ${progressColor}40, 0 4px 15px ${progressColor}20`;
 
   // Circular progress for mobile
   const radius = 54;
@@ -60,7 +62,8 @@ export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card rounded-2xl p-5 md:p-8 relative overflow-hidden"
+      className="glass-card rounded-2xl p-5 md:p-8 relative overflow-hidden shadow-lg border-0"
+      style={{ boxShadow: `0 8px 32px -8px ${progressColor}15, 0 4px 16px -4px hsl(220 60% 22% / 0.08)` }}
     >
       {/* Background decoration */}
       <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-[0.04]" style={{ background: progressColor }} />
@@ -88,10 +91,17 @@ export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps
           <div className="relative shrink-0">
             <svg width="128" height="128" viewBox="0 0 128 128" className="transform -rotate-90">
               <circle cx="64" cy="64" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
+              <defs>
+                <linearGradient id={`grad-${unit}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={progressColor} />
+                  <stop offset="100%" stopColor={progressColor} stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
               <motion.circle
                 cx="64" cy="64" r={radius} fill="none"
-                stroke={progressColor}
+                stroke={`url(#grad-${unit})`}
                 strokeWidth="10" strokeLinecap="round"
+                style={{ filter: `drop-shadow(0 0 6px ${progressColor}50)` }}
                 strokeDasharray={circumference}
                 initial={{ strokeDashoffset: circumference }}
                 animate={{ strokeDashoffset }}
@@ -154,10 +164,10 @@ export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps
 
           {/* Progress bar with milestone markers */}
           <div className="relative">
-            <div className="h-5 bg-muted rounded-full overflow-hidden">
+            <div className="h-5 bg-muted/60 rounded-full overflow-hidden shadow-inner">
               <motion.div
                 className="h-full rounded-full relative"
-                style={{ background: `linear-gradient(90deg, ${progressColor}, ${progressColor}dd)` }}
+                style={{ background: progressGradient, boxShadow: glowShadow }}
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(percentage, 100)}%` }}
                 transition={{ duration: 1.5, ease: "easeOut" }}

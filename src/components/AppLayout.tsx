@@ -11,7 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-h-screen">
-          <header className="h-16 flex items-center justify-between border-b bg-card/80 backdrop-blur-md px-4 sticky top-0 z-30">
+          <header className="h-16 flex items-center justify-between border-b border-border/50 bg-card/90 backdrop-blur-xl px-4 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-foreground" />
               <h1 className="font-heading font-bold text-lg text-foreground hidden sm:block">Saber+</h1>
