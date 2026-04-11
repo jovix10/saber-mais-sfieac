@@ -458,7 +458,7 @@ export default function Admin() {
 
   const viewCertFile = async (fileUrl: string | null) => {
     if (!fileUrl) { toast.error("Nenhum arquivo anexado"); return; }
-    const { data } = await supabase.storage.from("certificates").createSignedUrl(fileUrl, 300);
+    const { data } = await supabase.storage.from("certificates").createSignedUrl(fileUrl, 604800);
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
     else toast.error("Erro ao abrir arquivo");
   };
