@@ -39,10 +39,19 @@ const BADGE_LEVELS = [
   { name: 'Lenda', hours: 80 },
 ];
 
+// Competências que contam para o PROGRESSO (meta) de cada unidade
+const UNIT_PROGRESS_COMPETENCES: Record<string, string[] | 'all'> = {
+  SESI: ['Digital', 'Inclusiva'],
+  SENAI: ['Digital', 'Ambiental'],
+  IEL: 'all',
+  FIEAC: 'all',
+};
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [certCount, setCertCount] = useState(0);
+  const [progressHours, setProgressHours] = useState(0);
   const [rankPosition, setRankPosition] = useState<number | null>(null);
   const [myTasks, setMyTasks] = useState<TeamTask[]>([]);
   const [showEvidenceDialog, setShowEvidenceDialog] = useState(false);
@@ -64,6 +73,17 @@ export default function Dashboard() {
     supabase.from("team_tasks").select("*").eq("assigned_to", profile.id).order("created_at", { ascending: false }).then(({ data }) => {
       if (data) setMyTasks(data as TeamTask[]);
     });
+
+    // Calculate progress hours based on unit-specific competencies
+    const allowedCompetences = UNIT_PROGRESS_COMPETENCES[profile.unit] || 'all';
+    let query = supabase.from("certificates").select("hours, competence").eq("user_id", profile.id).eq("status", "approved");
+    if (allowedCompetences !== 'all') {
+      query = query.in("competence", allowedCompetences);
+    }
+    query.then(({ data }) => {
+      const total = data?.reduce((sum, c) => sum + (c.hours || 0), 0) ?? 0;
+      setProgressHours(total);
+    });
   }, [profile]);
 
   if (!profile) return null;
@@ -83,7 +103,7 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <ProgressCard unit={profile.unit as Unit} currentHours={hours} userName={profile.name.split(' ')[0]} />
+        <ProgressCard unit={profile.unit as Unit} currentHours={progressHours} userName={profile.name.split(' ')[0]} />
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
