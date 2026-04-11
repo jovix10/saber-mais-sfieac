@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User, ShieldCheck, Users,
+  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User, ShieldCheck, Users, Flame,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ import casasBranca from "@/assets/casas-branca.png";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Cursos em Alta", url: "/#cursos", icon: Flame },
   { title: "Certificados", url: "/certificates", icon: Upload },
   { title: "Ranking", url: "/leaderboard", icon: Trophy },
   { title: "Conquistas", url: "/badges", icon: Award },
