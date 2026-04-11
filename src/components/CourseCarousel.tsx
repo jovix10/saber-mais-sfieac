@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, Leaf, Users, Clock, ExternalLink, Puzzle, Shield, Monitor, Brain, Lightbulb, GraduationCap, Rocket, Target, Zap } from "lucide-react";
+import { BookOpen, Leaf, Users, Clock, ExternalLink, Puzzle, Shield, Monitor, Brain, Lightbulb, GraduationCap, Rocket, Target, Zap, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 
 const competenceIcons: Record<string, React.ElementType> = {
@@ -71,8 +71,10 @@ export function CourseCarousel() {
   }
 
   return (
-    <div>
-      <h3 className="font-heading font-bold text-lg text-foreground mb-4">🔥 Cursos em Alta</h3>
+    <div id="cursos-em-alta">
+      <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+        <Flame className="h-5 w-5 text-orange-500" /> Cursos em Alta
+      </h3>
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory scrollbar-hide">
         {courses.map((course, i) => {
           const CompIcon = competenceIcons[course.competence] || Puzzle;
@@ -90,7 +92,7 @@ export function CourseCarousel() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="glass-card rounded-xl p-5 min-w-[260px] max-w-[280px] snap-start cursor-pointer hover:shadow-xl transition-shadow group block"
+              className="glass-card rounded-xl p-5 min-w-[260px] max-w-[280px] snap-start cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group block border-0"
             >
               <div className={`h-28 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 transition-colors relative overflow-hidden`}>
                 {course.image_url ? (
