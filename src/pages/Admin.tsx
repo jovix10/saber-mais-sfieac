@@ -715,29 +715,115 @@ export default function Admin() {
         </div>
 
         {/* Overview - Users Table */}
-        {tab === 'overview' && (
+        {tab === 'overview' && (() => {
+          const filteredProfiles = profiles.filter(p => {
+            const q = userSearch.toLowerCase().trim();
+            if (!q) return true;
+            return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q);
+          });
+          const filteredIds = filteredProfiles.map(p => p.id);
+          const allFilteredSelected = filteredIds.length > 0 && filteredIds.every(id => selectedIds.includes(id));
+          const someFilteredSelected = filteredIds.some(id => selectedIds.includes(id));
+          const selectedAreAllUsers = selectedIds.length > 0 && selectedIds.every(id => getUserRole(id) === 'user');
+          const selectedAreAllGestors = selectedIds.length > 0 && selectedIds.every(id => getUserRole(id) === 'gestor');
+
+          return (
           <div className="glass-card rounded-2xl p-6">
-            <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5" /> Colaboradores ({profiles.length})
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className="font-heading font-bold text-lg text-foreground flex items-center gap-2">
+                <Users className="h-5 w-5" /> Colaboradores ({filteredProfiles.length}{userSearch ? ` de ${profiles.length}` : ''})
+              </h3>
+              <Input
+                placeholder="Buscar por nome, e-mail ou unidade..."
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+                className="max-w-xs"
+              />
+            </div>
+
+            {/* Bulk action bar */}
+            {selectedIds.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 flex flex-wrap items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                    {selectedIds.length} selecionado{selectedIds.length > 1 ? 's' : ''}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={clearSelection} className="h-7 gap-1 text-xs">
+                    <X className="h-3 w-3" /> Limpar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkPromoteToGestor}
+                    disabled={submitting || !selectedAreAllUsers}
+                    title={!selectedAreAllUsers ? 'Selecione apenas Colaboradores para promover' : ''}
+                    className="gap-1.5 text-violet-600 hover:bg-violet-500/10 border-violet-500/30"
+                  >
+                    <UserCog className="h-3.5 w-3.5" /> Promover a Gestor
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkDemoteToUser}
+                    disabled={submitting || !selectedAreAllGestors}
+                    title={!selectedAreAllGestors ? 'Selecione apenas Gestores para rebaixar' : ''}
+                    className="gap-1.5"
+                  >
+                    <Users className="h-3.5 w-3.5" /> Rebaixar a Colaborador
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => { setBulkManagerId(''); setShowBulkAssignDialog(true); }}
+                    disabled={submitting}
+                    className="gap-1.5"
+                  >
+                    <UsersRound className="h-3.5 w-3.5" /> Atribuir a um Gestor
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
+                    <th className="py-2 w-10">
+                      <Checkbox
+                        checked={allFilteredSelected ? true : someFilteredSelected ? 'indeterminate' : false}
+                        onCheckedChange={() => toggleSelectAll(filteredIds)}
+                        aria-label="Selecionar todos"
+                      />
+                    </th>
                     <th className="text-left py-2 font-medium text-muted-foreground">Nome</th>
                     <th className="text-left py-2 font-medium text-muted-foreground hidden md:table-cell">E-mail</th>
                     <th className="text-left py-2 font-medium text-muted-foreground">Unidade</th>
                     <th className="text-left py-2 font-medium text-muted-foreground">Cargo</th>
+                    <th className="text-left py-2 font-medium text-muted-foreground hidden lg:table-cell">Gestor</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Horas</th>
                     <th className="text-center py-2 font-medium text-muted-foreground">Ranking</th>
                     <th className="text-right py-2 font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {profiles.map(user => {
+                  {filteredProfiles.map(user => {
                     const role = getUserRole(user.id);
+                    const checked = selectedIds.includes(user.id);
+                    const managerName = user.manager_id ? profiles.find(p => p.id === user.manager_id)?.name : null;
                     return (
-                      <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                      <tr key={user.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${checked ? 'bg-primary/5' : ''}`}>
+                        <td className="py-3">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleSelect(user.id)}
+                            aria-label={`Selecionar ${user.name}`}
+                          />
+                        </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             {user.avatar_url ? (
@@ -758,6 +844,9 @@ export default function Admin() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${role === 'admin' ? 'bg-red-500/10 text-red-600' : role === 'gestor' ? 'bg-violet-500/10 text-violet-600' : 'bg-muted text-muted-foreground'}`}>
                             {role === 'admin' ? 'Admin' : role === 'gestor' ? 'Gestor' : 'Colaborador'}
                           </span>
+                        </td>
+                        <td className="py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                          {managerName || <span className="opacity-50">—</span>}
                         </td>
                         <td className="py-3 text-right">
                           <button
@@ -785,11 +874,85 @@ export default function Admin() {
                       </tr>
                     );
                   })}
+                  {filteredProfiles.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                        Nenhum colaborador encontrado.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-        )}
+          );
+        })()}
+
+        {/* Bulk Assign Manager Dialog */}
+        <Dialog open={showBulkAssignDialog} onOpenChange={setShowBulkAssignDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UsersRound className="h-5 w-5 text-primary" /> Atribuir Gestor em Massa
+              </DialogTitle>
+              <DialogDescription>
+                {selectedIds.length} colaborador{selectedIds.length > 1 ? 'es' : ''} será{selectedIds.length > 1 ? 'ão' : ''} vinculado{selectedIds.length > 1 ? 's' : ''} ao gestor escolhido abaixo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Gestor Responsável</Label>
+                <Select value={bulkManagerId || '__placeholder__'} onValueChange={v => setBulkManagerId(v === '__placeholder__' ? '' : v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um gestor" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Remover gestor (sem gestor) —</SelectItem>
+                    {profiles
+                      .filter(p => isUserGestor(p.id) || isUserAdmin(p.id))
+                      .filter(p => !selectedIds.includes(p.id))
+                      .map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} · {p.unit}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Apenas usuários com cargo Gestor ou Admin aparecem na lista.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-muted/40 p-3 max-h-40 overflow-y-auto">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Colaboradores selecionados:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedIds.slice(0, 30).map(id => {
+                    const p = profiles.find(x => x.id === id);
+                    if (!p) return null;
+                    return (
+                      <span key={id} className="px-2 py-0.5 rounded-full bg-background text-xs border">
+                        {p.name}
+                      </span>
+                    );
+                  })}
+                  {selectedIds.length > 30 && (
+                    <span className="px-2 py-0.5 rounded-full bg-background text-xs border text-muted-foreground">
+                      +{selectedIds.length - 30}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                onClick={handleBulkAssignManager}
+                disabled={submitting || !bulkManagerId}
+                className="w-full gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {submitting ? 'Salvando...' : `Confirmar para ${selectedIds.length} colaborador${selectedIds.length > 1 ? 'es' : ''}`}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
 
         {/* Edit Hours Dialog */}
         <Dialog open={showEditHoursDialog} onOpenChange={setShowEditHoursDialog}>
