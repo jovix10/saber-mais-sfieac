@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle, KeyRound, Trash2, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Users, TrendingUp, FileText, Clock, Plus, BookOpen, Link as LinkIcon, Target, Shield, Upload, Download, Eye, BarChart3, Image, UserCheck, Pencil, Save, HelpCircle, KeyRound, Trash2, AlertTriangle, UserCog, UsersRound, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
