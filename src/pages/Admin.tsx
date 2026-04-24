@@ -55,6 +55,10 @@ export default function Admin() {
   const [credentialPopup, setCredentialPopup] = useState<{ name: string; email: string; password: string } | null>(null);
   const [bulkProgress, setBulkProgress] = useState<{ total: number; status: string } | null>(null);
   const [clearConfirmText, setClearConfirmText] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkAssignDialog, setShowBulkAssignDialog] = useState(false);
+  const [bulkManagerId, setBulkManagerId] = useState<string>('');
+  const [userSearch, setUserSearch] = useState('');
 
   const fetchAll = async () => {
     const [{ data: p }, { data: c }, { data: co }, { data: r }, { data: g }] = await Promise.all([
