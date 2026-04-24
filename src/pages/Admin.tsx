@@ -125,6 +125,73 @@ export default function Admin() {
     fetchAll();
   };
 
+  // ===== Bulk operations =====
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = (ids: string[]) => {
+    const allSelected = ids.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+    } else {
+      setSelectedIds(prev => Array.from(new Set([...prev, ...ids])));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds([]);
+
+  const handleBulkPromoteToGestor = async () => {
+    if (selectedIds.length === 0) return;
+    setSubmitting(true);
+    let success = 0, errors = 0;
+    for (const userId of selectedIds) {
+      const res = await invokeAdminFunction({ action: 'change_role', user_id: userId, new_role: 'gestor' });
+      if (res?.error || res?.data?.error) errors++; else success++;
+    }
+    toast.success(`${success} promovidos a Gestor${errors > 0 ? ` · ${errors} erros` : ''}`);
+    clearSelection();
+    await fetchAll();
+    setSubmitting(false);
+  };
+
+  const handleBulkDemoteToUser = async () => {
+    if (selectedIds.length === 0) return;
+    setSubmitting(true);
+    let success = 0, errors = 0;
+    for (const userId of selectedIds) {
+      const res = await invokeAdminFunction({ action: 'change_role', user_id: userId, new_role: 'user' });
+      if (res?.error || res?.data?.error) errors++; else success++;
+    }
+    toast.success(`${success} alterados para Colaborador${errors > 0 ? ` · ${errors} erros` : ''}`);
+    clearSelection();
+    await fetchAll();
+    setSubmitting(false);
+  };
+
+  const handleBulkAssignManager = async () => {
+    if (selectedIds.length === 0) { toast.error("Selecione ao menos um colaborador"); return; }
+    const managerId = bulkManagerId === '__none__' ? null : bulkManagerId;
+    setSubmitting(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ manager_id: managerId } as any)
+      .in("id", selectedIds);
+    if (error) {
+      toast.error("Erro ao atribuir gestor em massa");
+    } else {
+      const managerName = managerId ? profiles.find(p => p.id === managerId)?.name : null;
+      toast.success(managerId
+        ? `${selectedIds.length} colaboradores vinculados a ${managerName}`
+        : `${selectedIds.length} colaboradores desvinculados de seus gestores`);
+      setShowBulkAssignDialog(false);
+      setBulkManagerId('');
+      clearSelection();
+      await fetchAll();
+    }
+    setSubmitting(false);
+  };
+
   const toggleRanking = async (userId: string, current: boolean) => {
     await supabase.from("profiles").update({ visible_in_ranking: !current } as any).eq("id", userId);
     toast.success(!current ? "Usuário visível no ranking" : "Usuário oculto do ranking");
