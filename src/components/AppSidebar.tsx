@@ -25,7 +25,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { isAdmin, isGestor, signOut, profile } = useAuth();
+  const { getLabel, getIconName } = useBranding();
   const navigate = useNavigate();
+  const platformName = getLabel("platform.name", "Saber+");
 
   const handleLogout = async () => {
     await signOut();
@@ -39,9 +41,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="bg-sidebar">
         <div className="p-4 flex items-center gap-3">
-          <img src={logoFieac} alt="Saber+" className="h-9 w-auto shrink-0" />
+          <img src={logoFieac} alt={platformName} className="h-9 w-auto shrink-0" />
           {!collapsed && (
-            <p className="font-heading font-bold text-sidebar-foreground text-base tracking-tight">Saber+</p>
+            <p className="font-heading font-bold text-sidebar-foreground text-base tracking-tight">{platformName}</p>
           )}
         </div>
 
