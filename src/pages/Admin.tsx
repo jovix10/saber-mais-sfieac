@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BrandingEditor } from "@/components/BrandingEditor";
 
 interface Profile {
   id: string; name: string; email: string; unit: string; area: string; total_hours: number; avatar_url: string | null; visible_in_ranking: boolean; manager_id: string | null;
@@ -47,7 +48,7 @@ export default function Admin() {
   const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false, compliance_category: '', campaign_month: '' });
   const [courseImageFile, setCourseImageFile] = useState<File | null>(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
-  const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
+  const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support' | 'branding'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [supportForm, setSupportForm] = useState({ email: 'suporte@fieac.org.br', phone: '(68) 3212-4200', message: 'Precisa de ajuda? Entre em contato com o suporte do Sistema FIEAC.' });
   const [resetPwUser, setResetPwUser] = useState<Profile | null>(null);
@@ -583,6 +584,7 @@ export default function Admin() {
     { key: 'goals' as const, label: 'Metas' },
     { key: 'reports' as const, label: 'Relatórios' },
     { key: 'support' as const, label: 'Suporte' },
+    { key: 'branding' as const, label: '🎨 Personalização' },
   ];
 
   return (
@@ -1338,6 +1340,8 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {tab === 'branding' && <BrandingEditor />}
 
         {/* User Detail Dialog */}
         <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>

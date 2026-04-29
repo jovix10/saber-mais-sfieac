@@ -1,8 +1,7 @@
-import {
-  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User, ShieldCheck, Users, Flame,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranding, DynamicIcon } from "@/hooks/useBranding";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -13,20 +12,22 @@ import logoFieac from "@/assets/logo-fieac.png";
 import casasBranca from "@/assets/casas-branca.png";
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Cursos em Alta", url: "/#cursos", icon: Flame },
-  { title: "Certificados", url: "/certificates", icon: Upload },
-  { title: "Ranking", url: "/leaderboard", icon: Trophy },
-  { title: "Conquistas", url: "/badges", icon: Award },
-  { title: "Compliance", url: "/compliance", icon: ShieldCheck },
-  { title: "Perfil", url: "/profile", icon: User },
+  { key: "dashboard", title: "Dashboard", url: "/", icon: "LayoutDashboard" },
+  { key: "cursos", title: "Cursos em Alta", url: "/#cursos", icon: "Flame" },
+  { key: "certificates", title: "Certificados", url: "/certificates", icon: "Upload" },
+  { key: "leaderboard", title: "Ranking", url: "/leaderboard", icon: "Trophy" },
+  { key: "badges", title: "Conquistas", url: "/badges", icon: "Award" },
+  { key: "compliance", title: "Compliance", url: "/compliance", icon: "ShieldCheck" },
+  { key: "profile", title: "Perfil", url: "/profile", icon: "User" },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { isAdmin, isGestor, signOut, profile } = useAuth();
+  const { getLabel, getIconName } = useBranding();
   const navigate = useNavigate();
+  const platformName = getLabel("platform.name", "Saber+");
 
   const handleLogout = async () => {
     await signOut();
@@ -40,57 +41,61 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="bg-sidebar">
         <div className="p-4 flex items-center gap-3">
-          <img src={logoFieac} alt="Saber+" className="h-9 w-auto shrink-0" />
+          <img src={logoFieac} alt={platformName} className="h-9 w-auto shrink-0" />
           {!collapsed && (
-            <p className="font-heading font-bold text-sidebar-foreground text-base tracking-tight">Saber+</p>
+            <p className="font-heading font-bold text-sidebar-foreground text-base tracking-tight">{platformName}</p>
           )}
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">{getLabel("group.menu", "Menu")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    {item.url === '/#cursos' ? (
-                      <a
-                        href="/#cursos"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate('/');
-                          setTimeout(() => {
-                            document.getElementById('cursos-em-alta')?.scrollIntoView({ behavior: 'smooth' });
-                          }, 100);
-                        }}
-                        className="flex items-center text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all cursor-pointer"
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </a>
-                    ) : (
-                      <NavLink to={item.url} end={item.url === "/"} className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainItems.map((item) => {
+                const label = getLabel(`menu.${item.key}`, item.title);
+                const iconName = getIconName(`menu.${item.key}`, item.icon);
+                return (
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton asChild>
+                      {item.url === '/#cursos' ? (
+                        <a
+                          href="/#cursos"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/');
+                            setTimeout(() => {
+                              document.getElementById('cursos-em-alta')?.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
+                          }}
+                          className="flex items-center text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all cursor-pointer"
+                        >
+                          <DynamicIcon name={iconName} className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{label}</span>}
+                        </a>
+                      ) : (
+                        <NavLink to={item.url} end={item.url === "/"} className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+                          <DynamicIcon name={iconName} className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{label}</span>}
+                        </NavLink>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {isGestor && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">Gestão</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">{getLabel("group.gestao", "Gestão")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/manager" className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <Users className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>Minha Equipe</span>}
+                      <DynamicIcon name={getIconName("menu.manager", "Users")} className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{getLabel("menu.manager", "Minha Equipe")}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -101,14 +106,14 @@ export function AppSidebar() {
 
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">Administração</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">{getLabel("group.admin", "Administração")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/admin" className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <Shield className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>Painel Admin</span>}
+                      <DynamicIcon name={getIconName("menu.admin", "Shield")} className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{getLabel("menu.admin", "Painel Admin")}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
