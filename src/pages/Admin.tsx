@@ -256,10 +256,12 @@ export default function Admin() {
     const { error } = await supabase.from("courses").insert({
       title: courseForm.title, description: courseForm.description, competence: courseForm.competence,
       hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl, is_compliance: courseForm.is_compliance,
+      compliance_category: courseForm.is_compliance ? (courseForm.compliance_category || null) : null,
+      campaign_month: courseForm.is_compliance && courseForm.compliance_category === 'campanha' && courseForm.campaign_month ? parseInt(courseForm.campaign_month) : null,
     });
     if (error) { toast.error("Erro ao criar curso"); } else {
       toast.success("Curso criado!");
-      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
+      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false, compliance_category: '', campaign_month: '' });
       setCourseImageFile(null);
       setShowCourseDialog(false);
       fetchAll();
