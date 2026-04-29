@@ -1340,6 +1340,8 @@ export default function Admin() {
           </div>
         )}
 
+        {tab === 'branding' && <BrandingEditor />}
+
         {/* User Detail Dialog */}
         <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
