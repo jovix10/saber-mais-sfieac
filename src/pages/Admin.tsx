@@ -1190,9 +1190,32 @@ export default function Admin() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch checked={editingCourse.is_compliance} onCheckedChange={v => setEditingCourse({ ...editingCourse, is_compliance: v })} />
+                  <Switch checked={editingCourse.is_compliance} onCheckedChange={v => setEditingCourse({ ...editingCourse, is_compliance: v, compliance_category: v ? editingCourse.compliance_category : null, campaign_month: v ? editingCourse.campaign_month : null })} />
                   <Label>Curso de Compliance</Label>
                 </div>
+                {editingCourse.is_compliance && (
+                  <div className="space-y-2 pl-2 border-l-2 border-amber-500/30">
+                    <Label className="text-xs text-amber-700">Categoria do curso de Compliance</Label>
+                    <Select value={editingCourse.compliance_category || ''} onValueChange={v => setEditingCourse({ ...editingCourse, compliance_category: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="introdutorio">📘 Introdutório</SelectItem>
+                        <SelectItem value="obrigatorio">⚠️ Obrigatório</SelectItem>
+                        <SelectItem value="campanha">📅 Campanha mensal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {editingCourse.compliance_category === 'campanha' && (
+                      <Select value={String(editingCourse.campaign_month || '')} onValueChange={v => setEditingCourse({ ...editingCourse, campaign_month: parseInt(v) })}>
+                        <SelectTrigger><SelectValue placeholder="Mês da campanha" /></SelectTrigger>
+                        <SelectContent>
+                          {['Janeiro Branco','Fevereiro','Março','Abril Verde','Maio','Junho','Julho','Agosto','Setembro','Outubro Rosa','Novembro Azul','Dezembro'].map((m, i) => (
+                            <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
                 <Button onClick={handleEditCourse} disabled={submitting} className="w-full gap-2">
                   <Save className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
