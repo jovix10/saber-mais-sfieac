@@ -1074,9 +1074,32 @@ export default function Admin() {
                       <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)} />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch checked={courseForm.is_compliance} onCheckedChange={v => setCourseForm({ ...courseForm, is_compliance: v })} />
+                      <Switch checked={courseForm.is_compliance} onCheckedChange={v => setCourseForm({ ...courseForm, is_compliance: v, compliance_category: v ? courseForm.compliance_category : '', campaign_month: v ? courseForm.campaign_month : '' })} />
                       <Label>Curso de Compliance</Label>
                     </div>
+                    {courseForm.is_compliance && (
+                      <div className="space-y-2 pl-2 border-l-2 border-amber-500/30">
+                        <Label className="text-xs text-amber-700">Categoria do curso de Compliance</Label>
+                        <Select value={courseForm.compliance_category} onValueChange={v => setCourseForm({ ...courseForm, compliance_category: v })}>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="introdutorio">📘 Introdutório</SelectItem>
+                            <SelectItem value="obrigatorio">⚠️ Obrigatório (LGPD, Assédio, Ética...)</SelectItem>
+                            <SelectItem value="campanha">📅 Campanha mensal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {courseForm.compliance_category === 'campanha' && (
+                          <Select value={courseForm.campaign_month} onValueChange={v => setCourseForm({ ...courseForm, campaign_month: v })}>
+                            <SelectTrigger><SelectValue placeholder="Mês da campanha" /></SelectTrigger>
+                            <SelectContent>
+                              {['Janeiro Branco','Fevereiro','Março','Abril Verde','Maio','Junho','Julho','Agosto','Setembro','Outubro Rosa','Novembro Azul','Dezembro'].map((m, i) => (
+                                <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    )}
                     <Button onClick={handleAddCourse} disabled={submitting} className="w-full">
                       {submitting ? 'Criando...' : 'Criar Curso'}
                     </Button>
