@@ -77,10 +77,96 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_badges: {
+        Row: {
+          code: string
+          color: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          required_count: number | null
+          rule_type: string
+          rule_value: string | null
+        }
+        Insert: {
+          code: string
+          color?: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          name: string
+          required_count?: number | null
+          rule_type: string
+          rule_value?: string | null
+        }
+        Update: {
+          code?: string
+          color?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          required_count?: number | null
+          rule_type?: string
+          rule_value?: string | null
+        }
+        Relationships: []
+      }
+      course_evaluations: {
+        Row: {
+          certificate_id: string | null
+          comment: string | null
+          course_id: string | null
+          created_at: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          certificate_id?: string | null
+          comment?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          certificate_id?: string | null
+          comment?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_evaluations_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_evaluations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           active: boolean
+          campaign_month: number | null
           competence: string
+          compliance_category: string | null
           created_at: string
           description: string | null
           external_url: string
@@ -93,7 +179,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          campaign_month?: number | null
           competence?: string
+          compliance_category?: string | null
           created_at?: string
           description?: string | null
           external_url?: string
@@ -106,7 +194,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          campaign_month?: number | null
           competence?: string
+          compliance_category?: string | null
           created_at?: string
           description?: string | null
           external_url?: string
@@ -256,6 +346,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      user_compliance_badges: {
+        Row: {
+          badge_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_compliance_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_badges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
