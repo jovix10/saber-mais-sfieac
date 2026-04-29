@@ -20,7 +20,7 @@ interface Cert {
   id: string; user_id: string; title: string; hours: number; competence: string; status: string; created_at: string; file_url: string | null;
 }
 interface Course {
-  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null; is_compliance: boolean;
+  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null; is_compliance: boolean; compliance_category?: string | null; campaign_month?: number | null;
 }
 interface UserRole {
   user_id: string; role: string;
@@ -44,7 +44,7 @@ export default function Admin() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editHoursUser, setEditHoursUser] = useState<Profile | null>(null);
   const [editHoursValue, setEditHoursValue] = useState('');
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false, compliance_category: '', campaign_month: '' });
   const [courseImageFile, setCourseImageFile] = useState<File | null>(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', unit: 'FIEAC', area: '', role: 'user', manager_id: '' });
   const [tab, setTab] = useState<'overview' | 'certs' | 'courses' | 'goals' | 'reports' | 'support'>('overview');
@@ -228,6 +228,11 @@ export default function Admin() {
               await supabase.from("notifications").insert({ user_id: cert.user_id, title: '🏆 Conquista Exclusiva de Compliance!', message: `Você desbloqueou: ${complianceBadge}`, type: 'success' });
             }
           }
+          // Auto-unlock compliance digital badges
+          try {
+            const { checkAndUnlockComplianceBadges } = await import("@/lib/compliance-badges");
+            await checkAndUnlockComplianceBadges(cert.user_id);
+          } catch (e) { console.error(e); }
         }
       }
     }
@@ -256,10 +261,12 @@ export default function Admin() {
     const { error } = await supabase.from("courses").insert({
       title: courseForm.title, description: courseForm.description, competence: courseForm.competence,
       hours: parseInt(courseForm.hours) || 1, provider: courseForm.provider, external_url: courseForm.external_url, image_url: imageUrl, is_compliance: courseForm.is_compliance,
+      compliance_category: courseForm.is_compliance ? (courseForm.compliance_category || null) : null,
+      campaign_month: courseForm.is_compliance && courseForm.compliance_category === 'campanha' && courseForm.campaign_month ? parseInt(courseForm.campaign_month) : null,
     });
     if (error) { toast.error("Erro ao criar curso"); } else {
       toast.success("Curso criado!");
-      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false });
+      setCourseForm({ title: '', description: '', competence: 'Digital', hours: '1', provider: '', external_url: '', image_url: '', is_compliance: false, compliance_category: '', campaign_month: '' });
       setCourseImageFile(null);
       setShowCourseDialog(false);
       fetchAll();
@@ -278,6 +285,8 @@ export default function Admin() {
     const { error } = await supabase.from("courses").update({
       title: editingCourse.title, description: editingCourse.description, competence: editingCourse.competence,
       hours: editingCourse.hours, provider: editingCourse.provider, external_url: editingCourse.external_url, image_url: imageUrl, is_compliance: editingCourse.is_compliance,
+      compliance_category: editingCourse.is_compliance ? (editingCourse.compliance_category || null) : null,
+      campaign_month: editingCourse.is_compliance && editingCourse.compliance_category === 'campanha' ? (editingCourse.campaign_month || null) : null,
     }).eq("id", editingCourse.id);
     if (error) { toast.error("Erro ao atualizar curso"); } else {
       toast.success("Curso atualizado!");
@@ -1070,9 +1079,32 @@ export default function Admin() {
                       <Input type="file" accept="image/*" onChange={e => setCourseImageFile(e.target.files?.[0] || null)} />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch checked={courseForm.is_compliance} onCheckedChange={v => setCourseForm({ ...courseForm, is_compliance: v })} />
+                      <Switch checked={courseForm.is_compliance} onCheckedChange={v => setCourseForm({ ...courseForm, is_compliance: v, compliance_category: v ? courseForm.compliance_category : '', campaign_month: v ? courseForm.campaign_month : '' })} />
                       <Label>Curso de Compliance</Label>
                     </div>
+                    {courseForm.is_compliance && (
+                      <div className="space-y-2 pl-2 border-l-2 border-amber-500/30">
+                        <Label className="text-xs text-amber-700">Categoria do curso de Compliance</Label>
+                        <Select value={courseForm.compliance_category} onValueChange={v => setCourseForm({ ...courseForm, compliance_category: v })}>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="introdutorio">📘 Introdutório</SelectItem>
+                            <SelectItem value="obrigatorio">⚠️ Obrigatório (LGPD, Assédio, Ética...)</SelectItem>
+                            <SelectItem value="campanha">📅 Campanha mensal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {courseForm.compliance_category === 'campanha' && (
+                          <Select value={courseForm.campaign_month} onValueChange={v => setCourseForm({ ...courseForm, campaign_month: v })}>
+                            <SelectTrigger><SelectValue placeholder="Mês da campanha" /></SelectTrigger>
+                            <SelectContent>
+                              {['Janeiro Branco','Fevereiro','Março','Abril Verde','Maio','Junho','Julho','Agosto','Setembro','Outubro Rosa','Novembro Azul','Dezembro'].map((m, i) => (
+                                <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    )}
                     <Button onClick={handleAddCourse} disabled={submitting} className="w-full">
                       {submitting ? 'Criando...' : 'Criar Curso'}
                     </Button>
@@ -1163,9 +1195,32 @@ export default function Admin() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch checked={editingCourse.is_compliance} onCheckedChange={v => setEditingCourse({ ...editingCourse, is_compliance: v })} />
+                  <Switch checked={editingCourse.is_compliance} onCheckedChange={v => setEditingCourse({ ...editingCourse, is_compliance: v, compliance_category: v ? editingCourse.compliance_category : null, campaign_month: v ? editingCourse.campaign_month : null })} />
                   <Label>Curso de Compliance</Label>
                 </div>
+                {editingCourse.is_compliance && (
+                  <div className="space-y-2 pl-2 border-l-2 border-amber-500/30">
+                    <Label className="text-xs text-amber-700">Categoria do curso de Compliance</Label>
+                    <Select value={editingCourse.compliance_category || ''} onValueChange={v => setEditingCourse({ ...editingCourse, compliance_category: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="introdutorio">📘 Introdutório</SelectItem>
+                        <SelectItem value="obrigatorio">⚠️ Obrigatório</SelectItem>
+                        <SelectItem value="campanha">📅 Campanha mensal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {editingCourse.compliance_category === 'campanha' && (
+                      <Select value={String(editingCourse.campaign_month || '')} onValueChange={v => setEditingCourse({ ...editingCourse, campaign_month: parseInt(v) })}>
+                        <SelectTrigger><SelectValue placeholder="Mês da campanha" /></SelectTrigger>
+                        <SelectContent>
+                          {['Janeiro Branco','Fevereiro','Março','Abril Verde','Maio','Junho','Julho','Agosto','Setembro','Outubro Rosa','Novembro Azul','Dezembro'].map((m, i) => (
+                            <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
                 <Button onClick={handleEditCourse} disabled={submitting} className="w-full gap-2">
                   <Save className="h-4 w-4" /> {submitting ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
