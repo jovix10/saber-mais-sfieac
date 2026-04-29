@@ -1,8 +1,7 @@
-import {
-  LayoutDashboard, Upload, Trophy, Award, Shield, LogOut, User, ShieldCheck, Users, Flame,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranding, DynamicIcon } from "@/hooks/useBranding";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -13,13 +12,13 @@ import logoFieac from "@/assets/logo-fieac.png";
 import casasBranca from "@/assets/casas-branca.png";
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Cursos em Alta", url: "/#cursos", icon: Flame },
-  { title: "Certificados", url: "/certificates", icon: Upload },
-  { title: "Ranking", url: "/leaderboard", icon: Trophy },
-  { title: "Conquistas", url: "/badges", icon: Award },
-  { title: "Compliance", url: "/compliance", icon: ShieldCheck },
-  { title: "Perfil", url: "/profile", icon: User },
+  { key: "dashboard", title: "Dashboard", url: "/", icon: "LayoutDashboard" },
+  { key: "cursos", title: "Cursos em Alta", url: "/#cursos", icon: "Flame" },
+  { key: "certificates", title: "Certificados", url: "/certificates", icon: "Upload" },
+  { key: "leaderboard", title: "Ranking", url: "/leaderboard", icon: "Trophy" },
+  { key: "badges", title: "Conquistas", url: "/badges", icon: "Award" },
+  { key: "compliance", title: "Compliance", url: "/compliance", icon: "ShieldCheck" },
+  { key: "profile", title: "Perfil", url: "/profile", icon: "User" },
 ];
 
 export function AppSidebar() {
