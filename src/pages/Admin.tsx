@@ -228,6 +228,11 @@ export default function Admin() {
               await supabase.from("notifications").insert({ user_id: cert.user_id, title: '🏆 Conquista Exclusiva de Compliance!', message: `Você desbloqueou: ${complianceBadge}`, type: 'success' });
             }
           }
+          // Auto-unlock compliance digital badges
+          try {
+            const { checkAndUnlockComplianceBadges } = await import("@/lib/compliance-badges");
+            await checkAndUnlockComplianceBadges(cert.user_id);
+          } catch (e) { console.error(e); }
         }
       }
     }
