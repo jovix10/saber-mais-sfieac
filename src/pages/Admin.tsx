@@ -20,7 +20,7 @@ interface Cert {
   id: string; user_id: string; title: string; hours: number; competence: string; status: string; created_at: string; file_url: string | null;
 }
 interface Course {
-  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null; is_compliance: boolean;
+  id: string; title: string; description: string; competence: string; hours: number; provider: string; external_url: string; active: boolean; image_url: string | null; is_compliance: boolean; compliance_category?: string | null; campaign_month?: number | null;
 }
 interface UserRole {
   user_id: string; role: string;
