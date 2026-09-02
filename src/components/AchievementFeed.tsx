@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Trophy, Flame } from "lucide-react";
+import { 
+  Award, 
+  Trophy, 
+  CheckCircleFill, 
+  ClockHistory, 
+  StarFill, 
+  LightningChargeFill 
+} from "react-bootstrap-icons";
 
 interface Achievement {
   id: string;
@@ -11,7 +18,13 @@ interface Achievement {
   created_at: string;
 }
 
-const EMOJIS = ['🏅', '🎯', '⭐', '🏆', '💪', '🔥', '🚀'];
+const FEED_ICONS = [
+  Award,
+  Trophy,
+  StarFill,
+  LightningChargeFill,
+  CheckCircleFill
+];
 
 export function AchievementFeed() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -54,11 +67,11 @@ export function AchievementFeed() {
     <div className="glass-card rounded-2xl p-5 md:p-6">
       <div className="flex items-center justify-between mb-5">
         <h3 className="font-heading font-bold text-lg text-foreground flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-amber-500" /> Conquistas Recentes
+          <Trophy className="h-5 w-5 text-amber-500" /> Atividades Recentes
         </h3>
         {achievements.length > 0 && (
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-            {achievements.length} conquistas
+          <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">
+            {achievements.length} registros
           </span>
         )}
       </div>
@@ -66,46 +79,52 @@ export function AchievementFeed() {
       {achievements.length === 0 ? (
         <div className="text-center py-8">
           <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma conquista registrada ainda</p>
-          <p className="text-xs text-muted-foreground mt-1">Complete cursos para aparecer aqui!</p>
+          <p className="text-sm text-muted-foreground">Nenhuma conquista registrada no período</p>
+          <p className="text-xs text-muted-foreground mt-1">Conclua capacitações para alimentar o feed corporativo.</p>
         </div>
       ) : (
         <div className="space-y-2">
           <AnimatePresence mode="popLayout">
             {achievements.map((a, i) => {
               const isNew = a.id === newId;
-              const emoji = EMOJIS[i % EMOJIS.length];
+              const IconItem = FEED_ICONS[i % FEED_ICONS.length];
               return (
                 <motion.div
                   key={a.id}
                   layout
-                  initial={{ opacity: 0, x: -30, scale: 0.9 }}
+                  initial={{ opacity: 0, x: -20 }}
                   animate={{
                     opacity: 1,
                     x: 0,
-                    scale: 1,
-                    ...(isNew ? { boxShadow: '0 0 0 2px hsl(45, 93%, 47%)' } : {}),
+                    ...(isNew ? { boxShadow: '0 0 0 2px hsl(var(--primary))' } : {}),
                   }}
-                  exit={{ opacity: 0, x: 30, scale: 0.9 }}
-                  transition={{ delay: i * 0.03, type: "spring", stiffness: 300, damping: 25 }}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isNew ? 'bg-amber-500/10 border border-amber-400/30' : 'bg-muted/40 hover:bg-muted/70'}`}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ delay: i * 0.02 }}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                    isNew ? 'bg-primary/5 border-primary/30' : 'bg-muted/20 border-border/50 hover:bg-muted/40'
+                  }`}
                 >
-                  <div className={`h-10 w-10 rounded-full unit-badge-${a.user_unit.toLowerCase()} flex items-center justify-center text-sm font-bold shrink-0 shadow-sm ring-2 ring-white/20`}>
+                  <div className={`h-9 w-9 rounded-full unit-badge-${a.user_unit.toLowerCase()} flex items-center justify-center text-xs font-bold shrink-0 shadow-sm`}>
                     {a.user_name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">
-                      <span className="font-bold">{a.user_name}</span>{' '}
-                      <span className="text-muted-foreground">{a.description}</span>
+                      <span className="font-semibold">{a.user_name}</span>{' '}
+                      <span className="text-muted-foreground text-xs sm:text-sm">{a.description}</span>
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded unit-badge-${a.user_unit.toLowerCase()}`}>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium unit-badge-${a.user_unit.toLowerCase()}`}>
                         {a.user_unit}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">{getTimeAgo(a.created_at)}</span>
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <ClockHistory className="h-2.5 w-2.5" />
+                        {getTimeAgo(a.created_at)}
+                      </span>
                     </div>
                   </div>
-                  <span className="text-xl shrink-0">{isNew ? '🎉' : emoji}</span>
+                  <div className="h-8 w-8 rounded-lg bg-background border flex items-center justify-center shrink-0">
+                    <IconItem className="h-4 w-4 text-primary" />
+                  </div>
                 </motion.div>
               );
             })}
