@@ -1,66 +1,60 @@
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
-
-const MOTIVATIONAL_QUOTES = [
-  "O conhecimento é a única riqueza que ninguém pode tirar de você.",
-  "Cada hora investida em aprender é um passo para o topo.",
-  "Grandes conquistas começam com pequenos passos diários.",
-  "Quem aprende mais, lidera melhor.",
-  "Sua dedicação de hoje é o sucesso de amanhã.",
-  "O aprendizado nunca esgota a mente. — Leonardo da Vinci",
-  "Invista em você. O retorno é garantido.",
-  "Aprender é a habilidade mais poderosa do século XXI.",
-];
+import { CheckCircleFill, CalendarWeek, LightningChargeFill } from "react-bootstrap-icons";
 
 export function DailyStreak() {
-  const [quote, setQuote] = useState("");
-  const [dayOfWeek, setDayOfWeek] = useState(0);
-
-  useEffect(() => {
-    const today = new Date();
-    setDayOfWeek(today.getDay());
-    // Pick quote based on day of year for consistency
-    const dayOfYear = Math.floor(
-      (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-    );
-    setQuote(MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length]);
-  }, []);
-
-  const days = ["D", "S", "T", "Q", "Q", "S", "S"];
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="glass-card rounded-xl p-4"
+      transition={{ delay: 0.3 }}
+      className="glass-card rounded-2xl p-5 border border-border/50 flex flex-col justify-between"
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
-          <Flame className="h-5 w-5 text-orange-500" />
-        </div>
-        <div>
-          <p className="text-xs font-heading font-bold text-foreground">Frase do Dia</p>
-          <p className="text-[10px] text-muted-foreground">Motivação diária</p>
-        </div>
-      </div>
-      <p className="text-xs text-foreground/80 italic leading-relaxed mb-3">"{quote}"</p>
-      <div className="flex justify-between gap-1">
-        {days.map((d, i) => (
-          <div
-            key={i}
-            className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-              i === dayOfWeek
-                ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                : i < dayOfWeek
-                ? "bg-orange-500/15 text-orange-600"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {d}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+            <LightningChargeFill className="h-4 w-4" />
           </div>
-        ))}
+          <div>
+            <h4 className="text-sm font-heading font-bold text-foreground leading-none">Frequência Semanal</h4>
+            <p className="text-[11px] text-muted-foreground mt-1">Acompanhamento contínuo de metas</p>
+          </div>
+        </div>
+        <span className="text-[11px] font-semibold bg-muted px-2.5 py-1 rounded-full text-foreground/80 flex items-center gap-1.5">
+          <CalendarWeek className="h-3 w-3" /> Ciclo Ativo
+        </span>
+      </div>
+
+      <div className="grid grid-cols-7 gap-2 my-2">
+        {days.map((d, i) => {
+          const isToday = i === dayOfWeek;
+          const isPast = i < dayOfWeek;
+
+          return (
+            <div key={d} className="flex flex-col items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground font-medium">{d}</span>
+              <div
+                className={`h-9 w-full rounded-xl flex items-center justify-center text-xs font-semibold transition-all ${
+                  isToday
+                    ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20"
+                    : isPast
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "bg-muted/40 text-muted-foreground/60 border border-transparent"
+                }`}
+              >
+                {isPast ? <CheckCircleFill className="h-3.5 w-3.5" /> : d.slice(0, 1)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="pt-3 mt-1 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+        <span>Engajamento do Ciclo</span>
+        <span className="font-semibold text-foreground">Regular</span>
       </div>
     </motion.div>
   );
