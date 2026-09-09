@@ -8,7 +8,7 @@ import {
   Puzzle, 
   Clock, 
   BoxArrowUpRight, 
-  Flame 
+  Fire 
 } from "react-bootstrap-icons";
 import { motion } from "framer-motion";
 
@@ -58,7 +58,7 @@ export function CourseCarousel() {
     <div id="cursos-em-alta" className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-heading font-bold text-lg text-foreground flex items-center gap-2">
-          <Flame className="h-5 w-5 text-amber-500" /> Cursos em Destaque
+          <Fire className="h-5 w-5 text-amber-500" /> Cursos em Destaque
         </h3>
         <span className="text-xs text-muted-foreground">Recomendados para sua trilha</span>
       </div>
