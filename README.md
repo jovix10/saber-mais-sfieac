@@ -123,7 +123,7 @@ npm run preview: Visualiza localmente a versão compilada de produção.
 npm run lint: Executa a verificação estática do código para identificar erros de sintaxe e estilo.
 
 ☁️ Deploy na Vercel
-O projeto está configurado para Deploy Contínuo (CI/CD) via Vercel:
+O projeto está configurado para Deploy Contínuo (CI/CD) via Vercel: https://saber-mais-sfieac-five.vercel.app/login
 
 Importe o repositório do GitHub no painel da Vercel.
 
