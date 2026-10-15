@@ -9,7 +9,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Award, BookOpen, Clock, Trophy, Star, TrendingUp, ClipboardList, CheckCircle, Upload as UploadIcon } from "lucide-react";
+import { 
+  Award, 
+  JournalBookmark, 
+  Clock, 
+  Trophy, 
+  TrophyFill,
+  StarFill, 
+  ClipboardCheck, 
+  CheckCircleFill, 
+  Upload,
+  LockFill,
+  CalendarEvent,
+  Paperclip
+} from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -94,7 +107,7 @@ export default function Dashboard() {
   const nextBadge = BADGE_LEVELS.find(b => hours < b.hours);
 
   const stats = [
-    { label: 'Certificados', value: certCount.toString(), icon: BookOpen, color: 'bg-blue-500/10 text-blue-600', onClick: () => navigate('/certificates') },
+    { label: 'Certificados', value: certCount.toString(), icon: JournalBookmark, color: 'bg-blue-500/10 text-blue-600', onClick: () => navigate('/certificates') },
     { label: 'Conquistas', value: `${badgeCount}/${BADGE_LEVELS.length}`, icon: Award, color: 'bg-amber-500/10 text-amber-600', onClick: () => navigate('/badges') },
     { label: 'Horas Total', value: `${hours}h`, icon: Clock, color: 'bg-emerald-500/10 text-emerald-600', onClick: undefined },
     { label: 'Ranking', value: rankPosition ? `#${rankPosition}` : '—', icon: Trophy, color: 'bg-violet-500/10 text-violet-600', onClick: () => navigate('/leaderboard') },
@@ -114,7 +127,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 + i * 0.08 }}
               onClick={s.onClick}
-              className={`glass-card rounded-xl p-4 text-center ${s.onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+              className={`glass-card rounded-xl p-4 text-center border border-border/40 ${s.onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
             >
               <div className={`h-10 w-10 rounded-xl ${s.color} flex items-center justify-center mx-auto mb-2`}>
                 <s.icon className="h-5 w-5" />
@@ -141,7 +154,7 @@ export default function Dashboard() {
             style={{ borderLeftColor: 'hsl(var(--accent))' }}
           >
             <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-              <Star className="h-6 w-6 text-accent" />
+              <StarFill className="h-5 w-5 text-accent" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-heading font-semibold text-foreground">
@@ -159,7 +172,9 @@ export default function Dashboard() {
                 />
               </div>
             </div>
-            <div className="text-2xl shrink-0">🔒</div>
+            <div className="h-9 w-9 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 text-muted-foreground">
+              <LockFill className="h-4 w-4" />
+            </div>
           </motion.div>
         )}
 
@@ -170,10 +185,12 @@ export default function Dashboard() {
             transition={{ delay: 0.6 }}
             className="glass-card rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-amber-500"
           >
-            <span className="text-3xl">🏆</span>
+            <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 text-amber-500">
+              <TrophyFill className="h-6 w-6" />
+            </div>
             <div>
               <p className="text-sm font-heading font-bold text-foreground">Nível Máximo: {currentBadge.name}</p>
-              <p className="text-xs text-amber-600 font-medium">Você é uma lenda do Saber+!</p>
+              <p className="text-xs text-amber-600 font-medium">Meta máxima da trilha corporativa concluída.</p>
             </div>
           </motion.div>
         )}
@@ -182,7 +199,7 @@ export default function Dashboard() {
         {myTasks.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="glass-card rounded-2xl p-6">
             <h3 className="font-heading font-bold text-lg text-foreground mb-4 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-primary" /> Tarefas Atribuídas
+              <ClipboardCheck className="h-5 w-5 text-primary" /> Tarefas Atribuídas
             </h3>
             <div className="space-y-3">
               {myTasks.map(task => {
@@ -192,16 +209,25 @@ export default function Dashboard() {
                   concluído: 'bg-emerald-500/10 text-emerald-600',
                 };
                 return (
-                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-muted/50 justify-between">
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-muted/40 border border-border/30 justify-between">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground">{task.title}</p>
                       {task.description && <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>}
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[task.status] || 'bg-muted'}`}>
                           {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                         </span>
-                        {task.due_date && <span className="text-xs text-muted-foreground">📅 {new Date(task.due_date).toLocaleDateString('pt-BR')}</span>}
-                        {task.evidence_note && <span className="text-xs text-emerald-600">📎 Evidência enviada</span>}
+                        {task.due_date && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <CalendarEvent className="h-3 w-3" />
+                            {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                        {task.evidence_note && (
+                          <span className="text-xs text-emerald-600 flex items-center gap-1">
+                            <Paperclip className="h-3 w-3" /> Evidência enviada
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -211,7 +237,6 @@ export default function Dashboard() {
                             await supabase.from("team_tasks").update({ status: v } as any).eq("id", task.id);
                             setMyTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: v } : t));
                             toast.success("Status atualizado!");
-                            // Notify manager when task is completed
                             if (v === 'concluído' && profile) {
                               await supabase.from("notifications").insert({
                                 user_id: task.assigned_by,
@@ -230,12 +255,12 @@ export default function Dashboard() {
                               <SelectItem value="concluído">Concluído</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button size="sm" variant="outline" className="gap-1 h-8" onClick={() => { setEvidenceTask(task); setEvidenceNote(task.evidence_note || ''); setShowEvidenceDialog(true); }}>
-                            <UploadIcon className="h-3 w-3" /> Evidência
+                          <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => { setEvidenceTask(task); setEvidenceNote(task.evidence_note || ''); setShowEvidenceDialog(true); }}>
+                            <Upload className="h-3 w-3" /> Evidência
                           </Button>
                         </>
                       )}
-                      {task.status === 'concluído' && <CheckCircle className="h-5 w-5 text-emerald-500" />}
+                      {task.status === 'concluído' && <CheckCircleFill className="h-5 w-5 text-emerald-500" />}
                     </div>
                   </div>
                 );
@@ -258,22 +283,21 @@ export default function Dashboard() {
                   <Label>Descrição da evidência</Label>
                   <Input value={evidenceNote} onChange={e => setEvidenceNote(e.target.value)} placeholder="Ex: Concluí o curso, certificado enviado" />
                 </div>
-                 <Button className="w-full gap-2" onClick={async () => {
-                   await supabase.from("team_tasks").update({ evidence_note: evidenceNote, status: 'concluído' } as any).eq("id", evidenceTask.id);
-                   setMyTasks(prev => prev.map(t => t.id === evidenceTask.id ? { ...t, evidence_note: evidenceNote, status: 'concluído' } : t));
-                   // Notify manager
-                   if (profile) {
-                     await supabase.from("notifications").insert({
-                       user_id: evidenceTask.assigned_by,
-                       title: "Tarefa concluída com evidência",
-                       message: `${profile.name} concluiu a tarefa "${evidenceTask.title}" e enviou evidência.`,
-                       type: "success",
-                     });
-                   }
-                   toast.success("Evidência enviada e tarefa concluída!");
-                   setShowEvidenceDialog(false);
-                 }}>
-                  <CheckCircle className="h-4 w-4" /> Enviar e Concluir
+                <Button className="w-full gap-2" onClick={async () => {
+                  await supabase.from("team_tasks").update({ evidence_note: evidenceNote, status: 'concluído' } as any).eq("id", evidenceTask.id);
+                  setMyTasks(prev => prev.map(t => t.id === evidenceTask.id ? { ...t, evidence_note: evidenceNote, status: 'concluído' } : t));
+                  if (profile) {
+                    await supabase.from("notifications").insert({
+                      user_id: evidenceTask.assigned_by,
+                      title: "Tarefa concluída com evidência",
+                      message: `${profile.name} concluiu a tarefa "${evidenceTask.title}" e enviou evidência.`,
+                      type: "success",
+                    });
+                  }
+                  toast.success("Evidência enviada e tarefa concluída!");
+                  setShowEvidenceDialog(false);
+                }}>
+                  <CheckCircleFill className="h-4 w-4" /> Enviar e Concluir
                 </Button>
               </div>
             )}

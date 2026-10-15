@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-interface Profile {
+export interface Profile {
   id: string;
   name: string;
   email: string;
@@ -36,12 +36,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
-    if (data) setProfile(data as Profile);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
 
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-    setIsAdmin(roles?.some((r: any) => r.role === "admin") ?? false);
-    setIsGestor(roles?.some((r: any) => r.role === "gestor") ?? false);
+      if (!error && data) {
+        setProfile(data as Profile);
+      }
+
+      // Consulta de roles segura (não quebra se a tabela ainda não existir)
+      try {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+
+        setIsAdmin(roles?.some((r: any) => r.role === "admin") ?? false);
+        setIsGestor(roles?.some((r: any) => r.role === "gestor") ?? false);
+      } catch {
+        setIsAdmin(false);
+        setIsGestor(false);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar perfil:", err);
+    }
   };
 
   const refreshProfile = async () => {
@@ -49,12 +70,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        // Use setTimeout to avoid deadlock with Supabase auth
-        setTimeout(() => fetchProfile(u.id), 0);
+    // 1. Pega sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchProfile(currentUser.id);
+      }
+      setLoading(false);
+    });
+
+    // 2. Escuta mudanças no estado de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchProfile(currentUser.id);
       } else {
         setProfile(null);
         setIsAdmin(false);
@@ -63,16 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        fetchProfile(u.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -106,6 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return ctx;
 }

@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { BoxArrowRight } from "react-bootstrap-icons";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding, DynamicIcon } from "@/hooks/useBranding";
@@ -150,7 +150,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-              <LogOut className="mr-2 h-4 w-4" />
+              <BoxArrowRight className="mr-2 h-4 w-4" />
               {!collapsed && <span>Sair</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>

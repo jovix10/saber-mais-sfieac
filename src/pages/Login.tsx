@@ -4,7 +4,16 @@ import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { 
+  Envelope, 
+  Lock, 
+  Eye, 
+  EyeSlash, 
+  ArrowRight,
+  Laptop,
+  Tree,
+  People
+} from "react-bootstrap-icons";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import logoFieac from "@/assets/logo-fieac.png";
@@ -15,6 +24,7 @@ export default function Login() {
   const { signIn, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   if (user) {
@@ -34,6 +44,12 @@ export default function Login() {
     setSubmitting(false);
   };
 
+  const pillars = [
+    { name: 'Digital', icon: Laptop },
+    { name: 'Ambiental', icon: Tree },
+    { name: 'Inclusiva', icon: People },
+  ];
+
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
@@ -50,20 +66,19 @@ export default function Login() {
           <img src={logoFieac} alt="Saber+" className="h-16 w-auto mb-8" />
           <h1 className="font-heading font-extrabold text-5xl leading-tight mb-4">Saber+</h1>
           <p className="text-white/60 text-lg leading-relaxed mb-8">
-            A plataforma gamificada do Sistema FIEAC. Aprenda, conquiste badges e lidere o ranking!
+            A plataforma corporativa do Sistema FIEAC. Capacitação contínua, certificações e acompanhamento de metas.
           </p>
 
           <div className="grid grid-cols-3 gap-3 mb-10">
-            {[
-              { name: 'Digital', emoji: '💻' },
-              { name: 'Ambiental', emoji: '🌱' },
-              { name: 'Inclusiva', emoji: '🤝' },
-            ].map(c => (
-              <div key={c.name} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center">
-                <span className="text-2xl block mb-1">{c.emoji}</span>
-                <p className="text-white/80 text-sm font-medium">{c.name}</p>
-              </div>
-            ))}
+            {pillars.map(c => {
+              const IconComponent = c.icon;
+              return (
+                <div key={c.name} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                  <IconComponent className="w-7 h-7 text-white/90 mb-2" />
+                  <p className="text-white/80 text-sm font-medium">{c.name}</p>
+                </div>
+              );
+            })}
           </div>
 
           <img src={casasBranca} alt="FIEAC · SESI · SENAI · IEL" className="w-64 opacity-50" />
@@ -92,11 +107,43 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" placeholder="Seu email institucional" value={email} onChange={e => setEmail(e.target.value)} className="h-12 rounded-xl" required />
+                <div className="relative flex items-center">
+                  <Envelope className="absolute left-3.5 text-muted-foreground w-5 h-5 pointer-events-none" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="Seu email institucional" 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)} 
+                    className="h-12 rounded-xl pl-11" 
+                    required 
+                  />
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="h-12 rounded-xl" required minLength={6} />
+                <div className="relative flex items-center">
+                  <Lock className="absolute left-3.5 text-muted-foreground w-5 h-5 pointer-events-none" />
+                  <Input 
+                    id="password" 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••••" 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)} 
+                    className="h-12 rounded-xl pl-11 pr-11" 
+                    required 
+                    minLength={6} 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 text-muted-foreground hover:text-foreground transition-colors p-1"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <Button type="submit" className="w-full h-12 rounded-xl gap-2 font-semibold text-base" disabled={submitting}>
