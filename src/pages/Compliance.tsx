@@ -112,7 +112,7 @@ export default function Compliance() {
       user_id: user.id, course_id: evalCourse.id, rating, comment,
     });
     if (error) { toast.error("Erro ao enviar avaliação"); return; }
-    toast.success("Obrigado pelo feedback! 🌟");
+    toast.success("Obrigado pelo feedback! ");
     setEvaluatedIds(new Set([...evaluatedIds, evalCourse.id]));
     setEvalCourse(null); setRating(0); setComment("");
   };
@@ -226,7 +226,7 @@ export default function Compliance() {
                         <Icon className="h-6 w-6" style={{ color: unlocked ? b.color : undefined }} />
                       </div>
                       <p className="font-heading font-bold text-xs text-foreground leading-tight">{b.name}</p>
-                      {unlocked && <p className="text-[10px] text-emerald-600 mt-1">✓ Desbloqueada</p>}
+                      {unlocked && <p className="text-[10px] text-emerald-600 mt-1"> Desbloqueada</p>}
                     </motion.div>
                   );
                 })}
@@ -362,7 +362,7 @@ export default function Compliance() {
               </div>
               {rating > 0 && (
                 <p className="text-center text-xs text-muted-foreground mt-2">
-                  {rating <= 2 ? '😕 Pode melhorar' : rating === 3 ? '🙂 Bom' : rating === 4 ? '😃 Muito bom' : '🤩 Excelente!'}
+                  {rating <= 2 ? ' Pode melhorar' : rating === 3 ? ' Bom' : rating === 4 ? ' Muito bom' : ' Excelente!'}
                 </p>
               )}
             </div>

@@ -47,7 +47,7 @@ export default function Badges() {
     <AppLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h2 className="font-heading font-bold text-2xl text-foreground">🏅 Conquistas</h2>
+          <h2 className="font-heading font-bold text-2xl text-foreground"> Conquistas</h2>
           <p className="text-muted-foreground text-sm">
             {unlockedCount} de {allBadges.length} badges desbloqueados
           </p>
@@ -77,7 +77,7 @@ export default function Badges() {
                 <h4 className="font-heading font-bold text-sm text-foreground">{badge.name}</h4>
                 <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
                 {unlocked && (
-                  <span className="inline-block mt-3 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-medium">✓ Desbloqueado</span>
+                  <span className="inline-block mt-3 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-medium"> Desbloqueado</span>
                 )}
               </motion.div>
             );

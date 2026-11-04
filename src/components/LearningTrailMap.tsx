@@ -14,12 +14,12 @@ interface TrailNode {
 }
 
 const TRAIL_MILESTONES = [
-  { hours: 0, label: "Início da Jornada", icon: Rocket, emoji: "🚀" },
+  { hours: 0, label: "Início da Jornada", icon: Rocket, emoji: "" },
   { hours: 5, label: "Primeiros Passos", icon: Star, emoji: "⭐" },
-  { hours: 10, label: "Em Evolução", icon: Zap, emoji: "⚡" },
-  { hours: 20, label: "Conhecimento Sólido", icon: BookOpen, emoji: "📚" },
-  { hours: 40, label: "Referência", icon: Trophy, emoji: "🏆" },
-  { hours: 80, label: "Lenda do Saber+", icon: Flag, emoji: "🏁" },
+  { hours: 10, label: "Em Evolução", icon: Zap, emoji: "" },
+  { hours: 20, label: "Conhecimento Sólido", icon: BookOpen, emoji: "" },
+  { hours: 40, label: "Referência", icon: Trophy, emoji: "" },
+  { hours: 80, label: "Lenda do Saber+", icon: Flag, emoji: "" },
 ];
 
 export function LearningTrailMap() {
@@ -47,7 +47,7 @@ export function LearningTrailMap() {
   return (
     <div className="glass-card rounded-2xl p-5 md:p-6">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-heading font-bold text-lg text-foreground">🗺️ Minha Trilha de Aprendizado</h3>
+        <h3 className="font-heading font-bold text-lg text-foreground">️ Minha Trilha de Aprendizado</h3>
         <span className="text-xs text-muted-foreground font-medium bg-muted px-2.5 py-1 rounded-full">
           {approvedCerts.length} curso{approvedCerts.length !== 1 ? "s" : ""} concluído{approvedCerts.length !== 1 ? "s" : ""}
         </span>

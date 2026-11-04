@@ -83,7 +83,7 @@ export default function Profile() {
             {currentLevel ? (
               <div>
                 <p className="text-sm font-heading font-semibold text-foreground">
-                  🏅 {currentLevel.name}
+                   {currentLevel.name}
                 </p>
                 {nextLevel && (
                   <div className="mt-2">
@@ -102,7 +102,7 @@ export default function Profile() {
                   </div>
                 )}
                 {!nextLevel && (
-                  <p className="text-xs text-amber-600 mt-1 font-medium">🎉 Nível máximo atingido!</p>
+                  <p className="text-xs text-amber-600 mt-1 font-medium"> Nível máximo atingido!</p>
                 )}
               </div>
             ) : (
@@ -148,7 +148,7 @@ export default function Profile() {
                     className={`h-12 w-12 mx-auto rounded-full flex items-center justify-center mb-2 ${unlocked ? 'shadow-lg' : ''}`}
                     style={{ backgroundColor: unlocked ? b.color + '20' : undefined, borderColor: unlocked ? b.color : undefined, borderWidth: unlocked ? 2 : 0 }}
                   >
-                    <span className="text-lg">{unlocked ? '🏅' : '🔒'}</span>
+                    <span className="text-lg">{unlocked ? '' : ''}</span>
                   </div>
                   <p className="text-xs font-heading font-semibold text-foreground">{b.name}</p>
                   <p className="text-[10px] text-muted-foreground">{b.hours}h</p>

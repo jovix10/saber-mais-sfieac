@@ -131,7 +131,7 @@ export default function ManagerDashboard() {
       const member = team.find(m => m.id === taskForm.assigned_to);
       await supabase.from("notifications").insert({
         user_id: taskForm.assigned_to,
-        title: '📋 Nova Tarefa Atribuída',
+        title: ' Nova Tarefa Atribuída',
         message: `Seu gestor atribuiu: "${taskForm.title}"`,
         type: 'info',
       });
@@ -169,7 +169,7 @@ export default function ManagerDashboard() {
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="font-heading font-bold text-2xl text-foreground">🏢 Minha Equipe</h2>
+            <h2 className="font-heading font-bold text-2xl text-foreground"> Minha Equipe</h2>
             <p className="text-sm text-muted-foreground">Acompanhe o desempenho e gerencie tarefas dos seus colaboradores</p>
           </div>
           <Button onClick={() => setShowTaskDialog(true)} className="gap-2">
@@ -197,9 +197,9 @@ export default function ManagerDashboard() {
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto">
           {([
-            { key: 'overview' as const, label: '📊 Visão Geral' },
-            { key: 'tasks' as const, label: '📋 Tarefas' },
-            { key: 'certs' as const, label: '📄 Certificados' },
+            { key: 'overview' as const, label: ' Visão Geral' },
+            { key: 'tasks' as const, label: ' Tarefas' },
+            { key: 'certs' as const, label: ' Certificados' },
           ]).map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               {t.label}
@@ -327,7 +327,7 @@ export default function ManagerDashboard() {
                             <span className="text-xs text-muted-foreground">{member.area || member.unit}</span>
                             <span className="text-xs text-muted-foreground">{approved} certs</span>
                             <span className="text-xs text-muted-foreground">{tasksDone}/{memberTasks.length} tarefas</span>
-                            {pct >= 100 && <span className="text-xs text-emerald-600 font-medium">✅ Meta</span>}
+                            {pct >= 100 && <span className="text-xs text-emerald-600 font-medium"> Meta</span>}
                           </div>
                         </div>
                       </motion.div>
@@ -374,8 +374,8 @@ export default function ManagerDashboard() {
                         {task.description && <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>}
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs text-muted-foreground">→ {member?.name || 'Colaborador'}</span>
-                          {task.due_date && <span className="text-xs text-muted-foreground">📅 {new Date(task.due_date).toLocaleDateString('pt-BR')}</span>}
-                          {task.evidence_note && <span className="text-xs text-emerald-600">📎 Evidência anexada</span>}
+                          {task.due_date && <span className="text-xs text-muted-foreground"> {new Date(task.due_date).toLocaleDateString('pt-BR')}</span>}
+                          {task.evidence_note && <span className="text-xs text-emerald-600"> Evidência anexada</span>}
                         </div>
                       </div>
                     </div>

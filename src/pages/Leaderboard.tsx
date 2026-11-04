@@ -36,7 +36,7 @@ export default function Leaderboard() {
             const above = sorted[myIdx - 1];
             const diff = above.totalHours - myHours;
             if (diff <= 10 && diff > 0) {
-              setChallenge(`🔥 Faltam apenas ${diff}h para você ultrapassar ${above.name.split(' ')[0]}!`);
+              setChallenge(` Faltam apenas ${diff}h para você ultrapassar ${above.name.split(' ')[0]}!`);
             }
           }
         }
@@ -48,7 +48,7 @@ export default function Leaderboard() {
     <AppLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h2 className="font-heading font-bold text-2xl text-foreground">🏆 Ranking</h2>
+          <h2 className="font-heading font-bold text-2xl text-foreground"> Ranking</h2>
           <p className="text-muted-foreground text-sm">Veja quem lidera a corrida do conhecimento</p>
         </div>
 

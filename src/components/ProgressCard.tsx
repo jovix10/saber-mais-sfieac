@@ -12,10 +12,10 @@ interface ProgressCardProps {
 }
 
 const MILESTONES = [
-  { pct: 25, label: "Aquecendo!", emoji: "🔥", icon: Flame },
-  { pct: 50, label: "Metade do caminho!", emoji: "⚡", icon: Zap },
-  { pct: 75, label: "Quase lá!", emoji: "🚀", icon: TrendingUp },
-  { pct: 100, label: "Meta atingida!", emoji: "🏆", icon: Trophy },
+  { pct: 25, label: "Aquecendo!", emoji: "", icon: Flame },
+  { pct: 50, label: "Metade do caminho!", emoji: "", icon: Zap },
+  { pct: 75, label: "Quase lá!", emoji: "", icon: TrendingUp },
+  { pct: 100, label: "Meta atingida!", emoji: "", icon: Trophy },
 ];
 
 export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps) {
@@ -73,7 +73,7 @@ export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
           <p className="text-muted-foreground text-sm">
-            Olá, <span className="font-semibold text-foreground">{userName}</span> 👋
+            Olá, <span className="font-semibold text-foreground">{userName}</span> 
           </p>
           <h2 className="font-heading font-bold text-lg md:text-2xl text-foreground mt-0.5">
             Progresso {new Date().getFullYear()}
@@ -129,7 +129,7 @@ export function ProgressCard({ unit, currentHours, userName }: ProgressCardProps
               </p>
             ) : (
               <p className="text-xs font-semibold text-emerald-600">
-                🎉 Parabéns! Meta superada em +{currentHours - goal}h
+                 Parabéns! Meta superada em +{currentHours - goal}h
               </p>
             )}
             {nextMilestone && (

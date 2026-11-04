@@ -77,7 +77,7 @@ export default function Certificates() {
       if (profile?.manager_id) {
         await supabase.from("notifications").insert({
           user_id: profile.manager_id,
-          title: '📄 Novo Certificado da Equipe',
+          title: ' Novo Certificado da Equipe',
           message: `${profile.name} enviou o certificado "${title}" (${hours}h - ${competence}) para validação.`,
           type: 'info',
         });

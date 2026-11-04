@@ -58,7 +58,7 @@ export async function checkAndUnlockComplianceBadges(userId: string): Promise<st
         newlyUnlocked.push({ id: badge.id, name: badge.name });
         await supabase.from("notifications").insert({
           user_id: userId,
-          title: '🏅 Nova medalha de Compliance!',
+          title: ' Nova medalha de Compliance!',
           message: `Você desbloqueou: ${badge.name}`,
           type: 'success',
         });
